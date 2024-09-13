@@ -29,7 +29,7 @@ class BasicCalDAVController extends AbstractController
     #[Route('/', name:'index')]
     public function index():JsonResponse
     {
-        return $this->json(['msg' => 'dockerssssssss semble fonctionner !'], Response::HTTP_OK);
+        return $this->json(['msg' => 'docker semble fonctionner !'], Response::HTTP_OK);
     }
 
     #[IsGranted('ROLE_USER', message: 'Acces denied', statusCode: Response::HTTP_UNAUTHORIZED)]
