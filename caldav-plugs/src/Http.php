@@ -2,91 +2,128 @@
 
 namespace Ginov\CaldavPlugs;
 
-use Sabre\HTTP\Client;
-use Sabre\HTTP\Request;
-use Sabre\DAV\Client as DAVClient;
+
+use Sabre\HTTP\Client as HttpClient;
+use Sabre\DAV\Client as DavClient;
 use Sabre\HTTP\ResponseInterface;
+use Sabre\HTTP\Request;
 
 class Http
 {
-    const DAV_CLIENT = 1;
-    const HTTP_CLIENT = 0;
+    // const IS_SOAP = 2;
+    const IS_DAV = 1;
+    const IS_HTTP = 0;
+
+    const IS_NOT_VERIFY = false;
+
+    /** @var HttpClient */
+    private $httpClient;
+
+    /** @var DavClient */
+    private $davClient;
 
     private string $baseUrl;
-    private \Sabre\HTTP\Client $client;
 
-    public function __construct(string $url, string $verify = '', array $config = [])
+    private $isDav;
+
+    /**
+     * Constructor for the Http wrapper class.
+     *
+     * @param array $davSettings Array containing the DAV server settings.
+     */
+    public function __construct(string $baseUrl, array $davSettings = [])
     {
-        array_unshift($config, $url);
+        $this->httpClient = null;
+        $this->davClient = null;
 
-        $this->baseUrl = $config[0];
+        $this->baseUrl = $baseUrl;
 
-        $this->client = $this->httpClient($verify);
+        $this->isDav = !!$davSettings;
     }
 
-    public function request(
-        string $method,
-        string $url,
-        array $headers = [],
-        string $body = null): ResponseInterface 
+    public function http(): self
     {
-        return $this->client->send(new Request($method, $this->baseUrl . $url, $headers, $body));
+        $this->httpClient = new HttpClient();
+
+        $this->notVerify();
+
+        return $this;
+    }
+
+    public function dav(array $davSettings): self
+    {
+        array_unshift($davSettings, $this->baseUrl);
+
+        $this->davClient = new DavClient($davSettings);
+
+        $this->notVerify();
+
+        return $this;
+    }
+
+    public function verify(string $caPath): self
+    {
+        if (!$this->isDav)
+            $this->httpClient->addCurlSetting(CURLOPT_CAINFO, $caPath);
+        else
+            $this->davClient->addCurlSetting(CURLOPT_CAINFO, $caPath);
+
+        return $this;
+    }
+
+    private function notVerify(): self
+    {
+        if (!$this->isDav) {
+            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
+            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
+        } else {
+            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
+            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
+        }
+
+        return $this;
     }
 
     /**
-     * Undocumented function
+     * Send an HTTP request using Sabre\HTTP\Client.
      *
-     * @param string $verify
-     * @return self
+     * @param string $method The HTTP method (GET, POST, etc.).
+     * @param string $url The URL to send the request to.
+     * @param array $headers Optional HTTP headers.
+     * @param string $body Optional body content for the request.
+     *
+     * @return \Sabre\HTTP\Response
+     * @throws \Sabre\HTTP\ClientHttpException
      */
-    private static function httpClient(string $verify = ''): \Sabre\HTTP\Client
+    public function sendHttpRequest(string $method, string $url, array $headers = [], string $body = '')
     {
-        $client = new \Sabre\HTTP\Client();
-        
-        if (!$verify) {
-            $client->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
-            $client->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
-        }
+        $request = new \Sabre\HTTP\Request($method, $this->baseUrl . $url);
+        $request->setHeaders($headers);
+        $request->setBody($body);
 
-        return $client;
-    }
-}
-
-class Dav
-{
-    const DAV_CLIENT = 1;
-    const HTTP_CLIENT = 0;
-
-    private string $baseUrl;
-    private \Sabre\DAV\Client $client;
-
-    public function __construct(string $url, string $verify = '', array $config = [])
-    {
-        array_unshift($config, $url);
-
-        $this->baseUrl = $config[0];
-
-        $this->client = $this->davClient($config, $verify);
+        return $this->httpClient->send($request);
     }
 
-    public function request(
-        string $method,
-        string $url,
-        array $headers = [],
-        string $body = null): ResponseInterface 
+    /**
+     * Perform a DAV request using Sabre\DAV\Client.
+     *
+     * @param string $method The DAV method (PROPFIND, REPORT, etc.).
+     * @param string $url The DAV URL to interact with.
+     * @param array $headers Optional DAV headers.
+     * @param string $body Optional DAV request body.
+     *
+     * @return array The response from the DAV server.
+     * @throws \Sabre\DAV\Exception
+     */
+    public function sendDavRequest(string $method, string $url, array $headers = [], string $body = '')
     {
-        return $this->client->send(new Request($method, $this->baseUrl . $url, $headers, $body));
-    }
+        $request = [
+            'method'  => $method,
+            'url'     => $this->baseUrl . $url,
+            'headers' => $headers,
+            'body'    => $body,
+        ];
 
-    private static function davClient(array $config, string $verify = '')
-    {
-        $client = new \Sabre\DAV\Client($config);
-        
-        if (!$verify) {
-            $client->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
-            $client->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
-        }
-
-        return $client;
+        return $this->davClient->request($request);
     }
 }

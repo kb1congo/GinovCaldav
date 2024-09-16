@@ -1,0 +1,16 @@
+### from caldav-plugs
+- [ ]write unit test for Google, Baikal
+- [ ]add symfony var-dumper in dev section
+- [ ]change abstrat class Plateform name to Factory
+- [ ]Change name PlateformUserInterface to CredentialsInterface
+- [ ]Change GoogleUser = Office365User = ZimbraTOkenUser = TokenCredentials class name
+- [ ]Change BaikalUser = ZimbraUser = BasiCredencials
+- [ ]add class OAuthUrl
+
+### from example
+- [ ]remove lib SimpleCalDAV
+- [ ]Put Httptools.php, JwtTool.php in service directory
+- [ ]remove kafka.php
+- [ ]remove BasicCalDAVController.php and  GoogleCalDAVController.php
+- [ ]add class CalendarController, EventController 
+- [ ]add docker-compose.yaml and Dockerfile in git ignore

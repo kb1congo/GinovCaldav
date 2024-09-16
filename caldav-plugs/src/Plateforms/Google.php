@@ -9,9 +9,9 @@ use Ginov\CaldavPlugs\Plateform;
 use Ginov\CaldavPlugs\Dto\EventCalDAV;
 use Ginov\CaldavPlugs\Dto\CalendarCalDAV;
 use Ginov\CaldavPlugs\PlateformUserInterface;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\sendHttpRequest;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-
+use Symfony\Component\HttpFoundation\Request;
 
 class GoogleUser implements PlateformUserInterface
 {
@@ -40,9 +40,9 @@ class Google extends Plateform
 {
     private string $calDAVUrl;
     private string $certPath;
-    private string $scope;
+    /* private string $scope;
     private string $redirect_uri;
-    private $client_id;
+    private $client_id; */
 
     public function __construct(private ParameterBagInterface $parameters)
     {
@@ -88,7 +88,7 @@ class Google extends Plateform
     {
 
         $response = (new Http($this->srvUrl))
-            ->request('GET', "calendars/$calID", [
+            ->sendHttpRequest('GET', "calendars/$calID", [
                 'Authorization' => 'Bearer ' . $credentials
             ])
             ->getBodyAsString();
@@ -108,7 +108,7 @@ class Google extends Plateform
     {
 
         $response = (new Http($this->srvUrl))
-            ->request('GET', 'users/me/calendarList', [
+            ->sendHttpRequest('GET', 'users/me/calendarList', [
                 'Authorization' => 'Bearer ' . $credentials
             ])
             ->getBodyAsString();
@@ -135,7 +135,7 @@ class Google extends Plateform
     public function createCalendar(string $credentials, CalendarCalDAV $calendar): CalendarCalDAV
     {
         $response = (new Http($this->srvUrl))
-            ->request(
+            ->sendHttpRequest(
                 'POST',
                 'calendars',
                 ['Content-Type' => 'application/json', 'Authorization' => 'Bearer ' . $credentials],
@@ -161,7 +161,7 @@ class Google extends Plateform
     public function deleteCalendar(string $credentials, string $calID): void
     {
         $response = (new Http($this->srvUrl))
-            ->request('DELETE', 'calendars');
+            ->sendHttpRequest('DELETE', 'calendars');
     }
 
     public function events(string $credentials, string $idCal): array
