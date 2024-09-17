@@ -33,6 +33,8 @@ class ApiController extends AbstractController
     #[Route('/google', name: 'google_code', methods: ['GET'])]
     public function index(): JsonResponse
     {
+        dd(new \Ginov\CaldavPlugs\Plateforms\Google($this->params));
+
         /** @var Google */
         $plateformInstance = Plateform::create('google', $this->params);
 

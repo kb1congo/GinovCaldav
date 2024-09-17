@@ -11,6 +11,7 @@
         "enqueue/fs": "*",
         "enqueue/rdkafka": "^0.10.20",
         "firebase/php-jwt": "^6.10",
+        "ginov/caldav-plugs": "*",
         "guzzlehttp/guzzle": "^7.9",
         "om/icalparser": "^3.1",
         "paragonie/sodium_compat": "^2.0",
@@ -29,9 +30,14 @@
         "symfony/security-bundle": "6.4.*",
         "symfony/serializer": "6.4.*",
         "symfony/validator": "6.4.*",
-        "symfony/yaml": "6.4.*",
-        "ginov/caldav-plugs": "*"
+        "symfony/yaml": "6.4.*"
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../caldav-plugs"
+        }
+    ],
     "require-dev": {
         "symfony/maker-bundle": "^1.60",
         "symfony/var-dumper": "6.4.*"
@@ -44,19 +50,10 @@
         },
         "sort-packages": true
     },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../caldav-plugs"
-        }
-    ],
     "autoload": {
         "psr-4": {
             "App\\": "src/"
-        },
-        "files": [
-            "lib/simpleCalDAV/SimpleCalDAVClient.php"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {

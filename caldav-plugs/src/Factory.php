@@ -9,7 +9,7 @@ use Ginov\CaldavPlugs\Plateforms\Zimbra;
 use Ginov\CaldavPlugs\PlateformInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
-abstract class Plateform implements PlateformInterface
+abstract class Factory implements PlateformInterface
 {
     protected string $srvUrl;
 

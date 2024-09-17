@@ -41,6 +41,11 @@ class Http
         $this->isDav = !!$davSettings;
     }
 
+    /**
+     * get http client
+     *
+     * @return self
+     */
     public function http(): self
     {
         $this->httpClient = new HttpClient();
@@ -50,6 +55,12 @@ class Http
         return $this;
     }
 
+    /**
+     * get dav client
+     *
+     * @param array $davSettings
+     * @return self
+     */
     public function dav(array $davSettings): self
     {
         array_unshift($davSettings, $this->baseUrl);
@@ -61,25 +72,18 @@ class Http
         return $this;
     }
 
+    /**
+     * active ssl verification
+     *
+     * @param string $caPath
+     * @return self
+     */
     public function verify(string $caPath): self
     {
         if (!$this->isDav)
             $this->httpClient->addCurlSetting(CURLOPT_CAINFO, $caPath);
         else
             $this->davClient->addCurlSetting(CURLOPT_CAINFO, $caPath);
-
-        return $this;
-    }
-
-    private function notVerify(): self
-    {
-        if (!$this->isDav) {
-            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
-            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
-        } else {
-            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
-            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
-        }
 
         return $this;
     }
@@ -95,7 +99,7 @@ class Http
      * @return \Sabre\HTTP\Response
      * @throws \Sabre\HTTP\ClientHttpException
      */
-    public function sendHttpRequest(string $method, string $url, array $headers = [], string $body = '')
+    public function sendHttpRequest(string $method, string $url, array $headers = [], string $body = ''):ResponseInterface
     {
         $request = new \Sabre\HTTP\Request($method, $this->baseUrl . $url);
         $request->setHeaders($headers);
@@ -125,5 +129,18 @@ class Http
         ];
 
         return $this->davClient->request($request);
+    }
+
+    private function notVerify(): self
+    {
+        if (!$this->isDav) {
+            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
+            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
+        } else {
+            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
+            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
+        }
+
+        return $this;
     }
 }
