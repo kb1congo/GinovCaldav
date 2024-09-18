@@ -7,7 +7,6 @@ use Ginov\CaldavPlugs\Dto\CalendarCalDAV;
 use Ginov\CaldavPlugs\Dto\EventCalDAV;
 use Ginov\CaldavPlugs\Factory;
 use Ginov\CaldavPlugs\Http;
-use Ginov\CaldavPlugs\Plateform;
 use Ginov\CaldavPlugs\PlateformUserInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -90,11 +89,12 @@ class BaikalUser implements PlateformUserInterface
 
     public function __toString(): string
     {
-        return $this->username . ';' . $this->password . ';' . $this->calID;
+        // return $this->username . ';' . $this->password . ';' . $this->calID;
+        return $this->username . ';' . $this->password;
     }
 }
 
-class Baikal extends Plateform
+class Baikal extends Factory
 {
     public function __construct(ParameterBagInterface $parameter)
     {
@@ -137,7 +137,7 @@ class Baikal extends Plateform
      * @param PlateformUserInterface $user
      * @return array
      */
-    public function calendars(string $credentials): array
+    public function __calendars(string $credentials): array
     {
         $user = self::parseCredentials($credentials);
         $username = $user->getUsername();
@@ -184,7 +184,7 @@ class Baikal extends Plateform
 
         // Parse la réponse XML
         $xml = simplexml_load_string($response);
-        dd($xml);
+        // dd($xml);
         $json = json_encode($xml);
 
         // Afficher la réponse en JSON
@@ -194,6 +194,22 @@ class Baikal extends Plateform
         curl_close($ch);
         return [];
     }
+
+    // public function calendars(string $credentials): CalendarCalDAV
+    public function calendars(string $credentials): array
+    {
+        $user = $this->parseCredentials($credentials);
+        $response = (new Http($this->srvUrl))
+            ->dav(['userName' => $user->getUsername(), 'password' => $user->getPassword()])
+            ->sendDavRequest('PROPFIND', $user->getUsername());
+
+        dd($response);
+
+
+        return new CalendarCalDAV($calID);
+    }
+
+    
 
     public function events(string $credentials, string $calID): array
     {

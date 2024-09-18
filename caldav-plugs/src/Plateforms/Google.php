@@ -37,7 +37,7 @@ class GoogleUser implements PlateformUserInterface
     }
 }
 
-class Google extends Plateform
+class Google extends Factory
 {
     private string $calDAVUrl;
     private string $certPath;

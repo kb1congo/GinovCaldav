@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\JwtTool;
 use App\HttpTools;
 use App\Security\User;
-use Ginov\CaldavPlugs\Plateform;
+use Ginov\CaldavPlugs\Factory;
 use Ginov\CaldavPlugs\Plateforms\Google;
 use Ginov\CaldavPlugs\Dto\EventCalDAV;
 use Ginov\CaldavPlugs\Dto\CalendarCalDAV;
@@ -33,10 +33,10 @@ class ApiController extends AbstractController
     #[Route('/google', name: 'google_code', methods: ['GET'])]
     public function index(): JsonResponse
     {
-        dd(new \Ginov\CaldavPlugs\Plateforms\Google($this->params));
+        //dd(new \Ginov\CaldavPlugs\Plateforms\Google($this->params));
 
         /** @var Google */
-        $plateformInstance = Plateform::create('google', $this->params);
+        $plateformInstance = Factory::create('google', $this->params);
 
         return $this->json([
             'url' => urldecode($plateformInstance->getOAuthUrl()),
@@ -63,7 +63,7 @@ class ApiController extends AbstractController
     #[Route('/{plateform}/login', name: 'login', methods: ['POST'])]
     public function login(string $plateform, Request $request): JsonResponse
     {
-        $plateformInstance = Plateform::create($plateform, $this->params);
+        $plateformInstance = Factory::create($plateform, $this->params);
 
         $user = (new User)
             ->setCredentials($plateformInstance->kokokoo($request));
@@ -84,7 +84,7 @@ class ApiController extends AbstractController
         /** @var \App\Security\User */
         $user = $this->getUser();
 
-        $plateformInstance = Plateform::create($plateform, $this->params);
+        $plateformInstance = Factory::create($plateform, $this->params);
 
         return $this->json([
             'token' => 'token',
@@ -99,7 +99,7 @@ class ApiController extends AbstractController
         /** @var \App\Security\User */
         $user = $this->getUser();
 
-        $plateformInstance = Plateform::create($plateform, $this->params);
+        $plateformInstance = Factory::create($plateform, $this->params);
 
         return $this->json([
             'token' => 'token',
@@ -135,7 +135,7 @@ class ApiController extends AbstractController
         if ($event->getDateEnd() <= $event->getDateStart())
             return $this->json('Invalide date', Response::HTTP_BAD_REQUEST);
 
-        $plateformInstance = Plateform::create($plateform, $this->params);
+        $plateformInstance = Factory::create($plateform, $this->params);
         $newEventOnServer = $plateformInstance->createEvent($user->getCredentials(), $event);
 
         return $this->json([
@@ -152,7 +152,7 @@ class ApiController extends AbstractController
         /** @var \App\Security\User */
         $user = $this->getUser();
 
-        $plateformInstance = Plateform::create($plateform, $this->params);
+        $plateformInstance = Factory::create($plateform, $this->params);
 
         return $this->json([
             'token' => 'token',
@@ -167,7 +167,7 @@ class ApiController extends AbstractController
         /** @var \App\Security\User */
         $user = $this->getUser();
 
-        $plateformInstance = Plateform::create($plateform, $this->params);
+        $plateformInstance = Factory::create($plateform, $this->params);
 
         return $this->json([
             'token' => 'token',
@@ -185,7 +185,7 @@ class ApiController extends AbstractController
         if ($limit <= $offset)
             return $this->json('Invalide interval date', Response::HTTP_BAD_REQUEST);
 
-        $plateformInstance = Plateform::create($plateform, $this->params);
+        $plateformInstance = Factory::create($plateform, $this->params);
 
         $events = $plateformInstance->events($user->getCredentials(), $calID);
 

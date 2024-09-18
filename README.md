@@ -3,7 +3,7 @@
 ### Diagrame des classes
 
 Allez sur https://mermaid.live/ pour executer ce code ainsi voir le diagramme
-
+```
 classDiagram
     class PlateformInterface {
         <<interface>>
@@ -97,4 +97,4 @@ namespace Dto {
     %%Baikal o-- EventCalDAV
     %%Office365 o-- EventCalDAV
 
-
+```

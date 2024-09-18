@@ -63,7 +63,9 @@ class Http
      */
     public function dav(array $davSettings): self
     {
-        array_unshift($davSettings, $this->baseUrl);
+        $davSettings['baseUri'] = $this->baseUrl;
+        // array_unshift($davSettings, $this->baseUrl);
+        // dd($davSettings);
 
         $this->davClient = new DavClient($davSettings);
 
@@ -127,8 +129,8 @@ class Http
             'headers' => $headers,
             'body'    => $body,
         ];
-
-        return $this->davClient->request($request);
+        // dd($this->baseUrl . $url);
+        return $this->davClient->request($method, $this->baseUrl . $url, $body, $headers);
     }
 
     private function notVerify(): self
