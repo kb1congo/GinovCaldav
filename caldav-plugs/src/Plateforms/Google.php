@@ -13,6 +13,7 @@ use Ginov\CaldavPlugs\PlateformUserInterface;
 use Symfony\Component\HttpFoundation\sendHttpRequest;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class GoogleUser implements PlateformUserInterface
 {
@@ -52,18 +53,12 @@ class Google extends Factory
         // string $scope, string $redirect_uri, $client_id
     }
 
-    // public function getOAuthUrl(string $scope, string $redirect_uri, $client_id): string
     public function getOAuthUrl(): string
     {
         return "https://accounts.google.com/o/oauth2/v2/auth?scope=" .
             $this->parameters->get('google.scope') . "&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=" .
             $this->parameters->get('google.redirect.uri') . "&client_id=" .
             $this->parameters->get('google.client.id');
-
-        /* return "https://accounts.google.com/o/oauth2/v2/auth?scope=" .
-            $scope . "&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=" .
-            $redirect_uri . "&client_id=" .
-            $client_id; */
     }
 
     public function login(PlateformUserInterface $user): PlateformUserInterface
@@ -87,16 +82,18 @@ class Google extends Factory
 
     public function calendar(string $credentials, string $calID): CalendarCalDAV
     {
-
         $response = (new Http($this->srvUrl))
-            ->sendHttpRequest('GET', "calendars/$calID", [
-                'Authorization' => 'Bearer ' . $credentials
-            ])
-            ->getBodyAsString();
+            ->http()
+            ->sendHttpRequest(
+                'GET',
+                "calendars/$calID",
+                ['Authorization' => 'Bearer ' . $credentials]
+            );
 
-        $json = json_decode($response, true);
+        if ($response->getStatus() != Response::HTTP_OK)
+            throw new \Exception($response->getBodyAsString(), $response->getStatus());
 
-        // dd($json);
+        $json = json_decode($response->getBodyAsString(), true);
 
         return (new CalendarCalDAV($calID))
             ->setCtag($json['etag'])
@@ -107,24 +104,28 @@ class Google extends Factory
 
     public function calendars(string $credentials): array
     {
-
         $response = (new Http($this->srvUrl))
-            ->sendHttpRequest('GET', 'users/me/calendarList', [
-                'Authorization' => 'Bearer ' . $credentials
-            ])
-            ->getBodyAsString();
+            ->http()
+            ->sendHttpRequest(
+                'GET',
+                'users/me/calendarList',
+                ['Authorization' => 'Bearer ' . $credentials]
+            );
+
+        if ($response->getStatus() != Response::HTTP_OK)
+            throw new \Exception($response->getBodyAsString(), $response->getStatus());
+
+
+        $json = json_decode($response->getBodyAsString(), true);
 
         $items = [];
-        $json = json_decode($response, true);
-        // dd($json['items']);
-
         foreach ($json['items'] as $value) {
             $items[] = (new CalendarCalDAV($value['id']))
-            ->setCtag($value['etag'])
-            ->setDisplayName($value['summary'])
-            ->setDescription($value['summary'])
-            ->setTimeZone($value['timeZone'])
-            ->setRBGcolor($value['backgroundColor']);
+                ->setCtag($value['etag'])
+                ->setDisplayName($value['summary'])
+                ->setDescription($value['summary'])
+                ->setTimeZone($value['timeZone'])
+                ->setRBGcolor($value['backgroundColor']);
         }
 
         return array(
@@ -136,6 +137,7 @@ class Google extends Factory
     public function createCalendar(string $credentials, CalendarCalDAV $calendar): CalendarCalDAV
     {
         $response = (new Http($this->srvUrl))
+            ->http()
             ->sendHttpRequest(
                 'POST',
                 'calendars',
@@ -145,24 +147,39 @@ class Google extends Factory
                     'timeZone' => $calendar->getTimeZone(),
                     'description' => $calendar->getDescription()
                 ]))
-            )
-            ->getBodyAsString();
+            );
+
+        if ($response->getStatus() != Response::HTTP_OK)
+            throw new \Exception($response->getBodyAsString(), $response->getStatus());
 
         /** @var array */
-        $json = json_decode($response, true);
+        $json = json_decode($response->getBodyAsString(), true);
 
         return (new CalendarCalDAV($json['id']))
             ->setCtag($json['etag'])
             ->setDisplayName($json['summary'])
-            ->setDescription($json['summary'])
-            ->setTimeZone($json['timeZone'])
-            ->setRBGcolor($json['backgroundColor']);
+            ->setDescription($json['description'])
+            ->setTimeZone($json['timeZone']);
     }
 
-    public function deleteCalendar(string $credentials, string $calID): void
+    public function updateCalendar(string $credentials, CalendarCalDAV $calendar): CalendarCalDAV
+    {
+        return new CalendarCalDAV($calendar->getCalendarID());
+    }
+
+    public function deleteCalendar(string $credentials, string $calID)
     {
         $response = (new Http($this->srvUrl))
+            ->http()
             ->sendHttpRequest('DELETE', 'calendars');
+
+        if ($response->getStatus() != Response::HTTP_OK)
+            throw new \Exception($response->getBodyAsString(), $response->getStatus());
+
+        /** @var array */
+        $json = json_decode($response->getBodyAsString(), true);
+
+        return  $json;
     }
 
     public function events(string $credentials, string $idCal): array
@@ -178,7 +195,8 @@ class Google extends Factory
         return $this->parse((string)$events);
     }
 
-    public function createEvent(string $credentials, EventCalDAV $event): EventCalDAV
+
+    public function createEvent(string $credentials, string $calID, EventCalDAV $event): EventCalDAV
     {
         return new EventCalDAV();
     }

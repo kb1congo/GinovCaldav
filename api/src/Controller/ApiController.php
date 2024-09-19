@@ -146,9 +146,9 @@ class ApiController extends AbstractController
     }
 
     #[IsGranted('ROLE_USER', message: 'Acces denied', statusCode: Response::HTTP_UNAUTHORIZED)]
-    #[Route('/{plateform}/create/calendar', 'api_add_cal', methods: ['POST'])]
-    public function addCalendar(string $plateform, #[MapRequestPayload] CalendarCalDAV $calendar): JsonResponse {
-
+    #[Route('/{plateform}/calendar', 'api_add_cal', methods: ['POST'])]
+    public function addCalendar(string $plateform, #[MapRequestPayload] CalendarCalDAV $calendar): JsonResponse 
+    {
         /** @var \App\Security\User */
         $user = $this->getUser();
 
@@ -157,7 +157,7 @@ class ApiController extends AbstractController
         return $this->json([
             'token' => 'token',
             'calendar' => $plateformInstance->createCalendar($user->getCredentials(), $calendar)
-        ], Response::HTTP_OK);
+        ], Response::HTTP_CREATED);
     }
 
     #[IsGranted('ROLE_USER', message: 'Acces denied', statusCode: Response::HTTP_UNAUTHORIZED)]
@@ -171,7 +171,7 @@ class ApiController extends AbstractController
 
         return $this->json([
             'token' => 'token',
-            'calendar' => $plateformInstance->deleteCalendar($user->getCredentials(), new CalendarCalDAV($calendar_id))
+            'calendar_id' => $plateformInstance->deleteCalendar($user->getCredentials(), new CalendarCalDAV($calendar_id))
         ], Response::HTTP_OK);
     }
 
