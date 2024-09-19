@@ -6,6 +6,7 @@
 - [ ]Change GoogleUser = Office365User = ZimbraTOkenUser = TokenCredentials class name
 - [ ]Change BaikalUser = ZimbraUser = BasiCredencials
 - [ ]add class OAuthUrl
+- [ ]Do i add symfony validator for calendar_id to make it required
 
 ### from example
 - [ ]remove lib SimpleCalDAV

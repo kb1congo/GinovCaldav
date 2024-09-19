@@ -136,8 +136,8 @@ class Http
     private function notVerify(): self
     {
         if (!$this->isDav) {
-            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
-            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
+            $this->httpClient->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
+            $this->httpClient->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
         } else {
             $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
             $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);

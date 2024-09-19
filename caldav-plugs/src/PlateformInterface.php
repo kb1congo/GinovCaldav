@@ -56,10 +56,19 @@ interface PlateformInterface
      * Undocumented function
      *
      * @param string $credentials
-     * @param string $idCal
+     * @param CalendarCalDAV $calendar
+     * @return void
+     */
+    public function updateCalendar(string $credentials, CalendarCalDAV $calendar): CalendarCalDAV;
+
+    /**
+     * Undocumented function
+     *
+     * @param string $credentials
+     * @param string $calID
      * @return array
      */
-    public function events(string $credentials, string $idCal): array;
+    public function events(string $credentials, string $calID): array;
 
     /**
      * Undocumented function
@@ -68,5 +77,5 @@ interface PlateformInterface
      * @param EventCalDAV $event
      * @return EventCalDAV
      */
-    public function createEvent(string $credentials, EventCalDAV $event): EventCalDAV;
+    public function createEvent(string $credentials, string $calID, EventCalDAV $event): EventCalDAV;
 }

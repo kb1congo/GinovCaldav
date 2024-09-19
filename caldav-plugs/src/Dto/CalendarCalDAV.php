@@ -10,12 +10,12 @@ class CalendarCalDAV
 
 	private string $calendar_id;
 
-	private string $rgba_color;
+	// private string $rgba_color;
 	private string $rbg_color;
 	private int $order;
 
 	private string $description;
-	private string $summary;
+	// private string $summary;
 	private string $timeZone;
 
 	function __construct(string $calendar_id, string $timeZone = 'Europe/Paris')
@@ -25,6 +25,7 @@ class CalendarCalDAV
 		$this->description = $calendar_id;
 		$this->timeZone = $timeZone;
 		$this->url = md5(time());
+		$this->ctag = '';
 	}
 
 	function __toString()
