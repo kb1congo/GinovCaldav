@@ -9,7 +9,6 @@
         "ext-iconv": "*",
         "enqueue/enqueue-bundle": "^0.10.19",
         "enqueue/fs": "*",
-        "enqueue/rdkafka": "^0.10.20",
         "firebase/php-jwt": "^6.10",
         "ginov/caldav-plugs": "*",
         "guzzlehttp/guzzle": "^7.9",
