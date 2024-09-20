@@ -7,6 +7,7 @@ use Ginov\CaldavPlugs\Plateforms\Baikal;
 use Ginov\CaldavPlugs\Plateforms\Google;
 use Ginov\CaldavPlugs\Plateforms\Zimbra;
 use Ginov\CaldavPlugs\PlateformInterface;
+use Ginov\CaldavPlugs\Plateforms\OutLook;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 abstract class Factory implements PlateformInterface
@@ -17,6 +18,7 @@ abstract class Factory implements PlateformInterface
         'baikal' => Baikal::class,
         'google' => Google::class,
         'zimbra' => Zimbra::class,
+        'outlook' => OutLook::class,
     ];
 
     /**

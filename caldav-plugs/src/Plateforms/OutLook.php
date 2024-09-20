@@ -13,10 +13,25 @@ use Ginov\CaldavPlugs\PlateformUserInterface;
 use Symfony\Component\HttpFoundation\sendHttpRequest;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
-
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class OutLook extends Factory
 {
+    private $httpClient;
+    private $clientId;
+    private $clientSecret;
+    private $redirectUri;
+    private $scope;
+
+    public function __construct(HttpClientInterface $httpClient, string $clientId, string $clientSecret, string $redirectUri, string $scope)
+    {
+        $this->httpClient = $httpClient;
+        $this->clientId = $clientId;
+        $this->clientSecret = $clientSecret;
+        $this->redirectUri = $redirectUri;
+        $this->scope = $scope;
+    }
+
     public function kokokoo(Request $request): PlateformUserInterface
     {
         /** @var GoogleUser $user */
@@ -37,9 +52,7 @@ class OutLook extends Factory
             ->getBodyAsString();
 
         $json = json_decode($response, true);
-
         // dd($json);
-
         return (new CalendarCalDAV($calID))
             ->setCalendarID($json['id'])
             ->setDisplayName($json['name'])
@@ -120,8 +133,13 @@ class OutLook extends Factory
 
         return $this->parse((string)$events);
     }
+    public function updateCalendar(string $credentials, CalendarCalDAV $calendar): CalendarCalDAV
+    {
+        return new CalendarCalDAV($calendar->getCalendarID());
+    }
 
-    public function createEvent(string $credentials, EventCalDAV $event): EventCalDAV
+    // public function createEvent(string $credentials, EventCalDAV $event): EventCalDAV
+    public function createEvent(string $credentials, string $calID, EventCalDAV $event): EventCalDAV
     {
         return new EventCalDAV();
     }
