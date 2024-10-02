@@ -21,6 +21,16 @@ parameters:
     google.redirect.uri: "%env(GOOGLE_REDIRECT_URI)%"
     google.srv.url: "%env(GOOGLE_SRV_URL)%"
     google.caldav.url: "%env(GOOGLE_CALDAV_URL)%"
+    google.oauth.callback.url: "%env(GOOGLE_OAUTH_CALLBACK_URL)%"
+    outlook.client.id: "%env(OUTLOOK_CLIENT_ID)%"
+    outlook.client.secret: "%env(OUTLOOK_CLIENT_SECRET)%"
+    outlook.client.tenant: "%env(OUTLOOK_CLIENT_TENANT)%"
+    outlook.scope: "%env(OUTLOOK_SCOPE)%"
+    outlook.redirect.uri: "%env(OUTLOOK_REDIRECT_URI)%"
+    outlook.srv.url: "%env(OUTLOOK_SRV_URL)%"
+    outlook.login.url: "%env(OUTLOOK_LOGIN_URL)%"
+    outlook.oauth.callback.url: "%env(OUTLOOK_OAUTH_CALLBACK_URL)%"
+    bluemind.srv.url: "%env(BLUEMIND_SRV_URL)%"
     certificate.path: "%kernel.project_dir%/config/certs/cacert.pem"
 
 services:

@@ -7,6 +7,18 @@
 - [ ]Change BaikalUser = ZimbraUser = BasiCredencials
 - [ ]add class OAuthUrl
 - [ ]Do i add symfony validator for calendar_id to make it required
+- [ ]Thing to add symdony vallidator in class to validate credentialsUser
+- [ ]Changer la signature de calendarCalDAV
+- [ ]Penser à ajouter un attribut cTag a un EventCalendar
+- [ ]Ajouter dans l'interface les methode static protected parsecredentials et parseAttends
+- [ ]Ajouter une classe abstraite OAuth fille de Factory et mère de Google et Outlook. Avec les methodes abstraites getCodeUrl et callBack
+- [ ]Faire les vérificationis qui s'impose lors de l'expiration du token au cas ou il ya une route pour dire a google que le token est die
+- [ ]Google donne lurl de l'event donc voir si c'est possible de le rajouter à nos events
+- [ ]Utiliser les function parseEvent et parseCalendar  unifier les sortie des connecteur
+- [ ]Vérifier si on ne doit pas ajouter un paramètre location au calendar je ne pense pas c'est plus pour les events
+- [ ]Dans eventCalDAV ajouter la location et le type d'event online ou présntiel
+- [ ]Mieux gere le systeme de récurence d'un event en lecture et en écriture
+- [ ]Ecrire plus intellligement les méthodes update pour au final ne considerer que les champs utils
 
 ### from example
 - [ ]remove lib SimpleCalDAV
@@ -15,3 +27,9 @@
 - [ ]remove BasicCalDAVController.php and  GoogleCalDAVController.php
 - [ ]add class CalendarController, EventController 
 - [ ]add docker-compose.yaml and Dockerfile in git ignore
+
+
+### Questions:
++ A quoi correspond `changeKey` de l'objejt calendar de Microsoft
++ L'objet calendar de Microsof a besoin de l'email du owner
++ Vérifier le sens de la variable order dans le calendarCalDAV

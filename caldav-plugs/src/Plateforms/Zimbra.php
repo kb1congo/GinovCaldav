@@ -164,6 +164,15 @@ class Zimbra extends Baikal
       $this->srvUrl = $parameter->get('baikal.srv.url');
    }
 
+   /* public function getOAuthUrl():string{
+      return '';
+   }
+
+   public function getToken(Request $request): string
+   {
+       return '';
+   }  */  
+
    /**
     * Undocumented function
     *

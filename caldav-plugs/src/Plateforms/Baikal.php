@@ -11,94 +11,23 @@ use Ginov\CaldavPlugs\PlateformUserInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
-class BaikalUser implements PlateformUserInterface
-{
-
-    private string $username;
-    private string $password;
-    private string $calID;
-
-    /**
-     * Get the value of username
-     *
-     * @return string
-     */
-    public function getUsername(): string
-    {
-        return $this->username;
-    }
-
-    /**
-     * Set the value of username
-     *
-     * @param string $username
-     * @return self
-     */
-    public function setUsername(string $username): self
-    {
-        $this->username = $username;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of password
-     *
-     * @return string
-     */
-    public function getPassword(): string
-    {
-        return $this->password;
-    }
-
-    /**
-     * Set the value of password
-     *
-     * @param string $password
-     * @return self
-     */
-    public function setPassword(string $password): self
-    {
-        $this->password = $password;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of calID
-     *
-     * @return string
-     */
-    public function getCalID(): string
-    {
-        return $this->calID;
-    }
-
-    /**
-     * Set the value of calID
-     *
-     * @param string $calID
-     * @return self
-     */
-    public function setCalID(string $calID): self
-    {
-        $this->calID = $calID;
-
-        return $this;
-    }
-
-    public function __toString(): string
-    {
-        // return $this->username . ';' . $this->password . ';' . $this->calID;
-        return $this->username . ';' . $this->password;
-    }
-}
 
 class Baikal extends Factory
 {
+
     public function __construct(ParameterBagInterface $parameter)
     {
         $this->srvUrl = $parameter->get('baikal.srv.url');
+    }
+
+    public function getOAuthUrl(): string
+    {
+        return '';
+    }
+
+    public function getToken(Request $request): array
+    {
+        return [];
     }
 
     /**
@@ -107,7 +36,7 @@ class Baikal extends Factory
      * @param PlateformUserInterface $userDto
      * @return PlateformUserInterface
      */
-    public function kokokoo(Request $request): PlateformUserInterface
+    public function login(Request $request): PlateformUserInterface
     {
         /** @var BaikalUser $user */
         $user = (new BaikalUser())
@@ -118,7 +47,7 @@ class Baikal extends Factory
         return $user;
     }
 
-    public function calendar(string $credentials, string $calID): CalendarCalDAV
+    public function getCalendar(string $credentials, string $calID): CalendarCalDAV
     {
         $user = $this->parseCredentials($credentials);
         $response = (new Http($this->srvUrl))
@@ -195,8 +124,7 @@ class Baikal extends Factory
         return [];
     }
 
-    // public function calendars(string $credentials): CalendarCalDAV
-    public function calendars(string $credentials): array
+    public function getCalendars(string $credentials): array
     {
         $user = $this->parseCredentials($credentials);
         $response = (new Http($this->srvUrl))
@@ -209,14 +137,27 @@ class Baikal extends Factory
         return new CalendarCalDAV($calID);
     }
 
-    
-
-    public function events(string $credentials, string $calID): array
+    public function getEvents(string $credentials, string $calID, int $timeMin, int $timeMax): array
     {
         return [];
     }
 
-    public function createEvent(string $credentials, EventCalDAV $event): EventCalDAV
+    public function getEvent(string $credentials, string $eventID, string $calID): EventCalDAV
+    {
+        return new EventCalDAV();
+    }
+
+    public function createEvent(string $credentials, string $calID, EventCalDAV $event): EventCalDAV
+    {
+        return new EventCalDAV();
+    }
+
+    public function deleteEvent(string $credentials, string $calID, string $eventID): string
+    {
+        return '';
+    }
+
+    public function updateEvent(string $credentials, string $calID, string $eventID, EventCalDAV $event): EventCalDAV
     {
         return new EventCalDAV();
     }
@@ -293,6 +234,11 @@ class Baikal extends Factory
         return (new CalendarCalDAV('TODO'));
     }
 
+    public function updateCalendar(string $credentials, CalendarCalDAV $calendar): CalendarCalDAV
+    {
+        return new CalendarCalDAV('');
+    }
+
     public function deleteCalendar(string $credentials, string $calID)
     {
         $user = self::parseCredentials($credentials);
@@ -337,76 +283,20 @@ class Baikal extends Factory
             ->setPassword($tmp[1]);
     }
 
-   /**
-    * Undocumented function
-    *
-    * @param array $parts
-    * @return string
-    */
+    /**
+     * Undocumented function
+     *
+     * @param array $parts
+     * @return string
+     */
     private function parseUrl(array $parts): string
     {
-       $url = $this->srvUrl;
-       foreach ($parts as $part) {
-          $url .= urlencode($part) . '/';
-       }
- 
-       return $url;
-    }    
-    
-}
+        $url = $this->srvUrl;
+        foreach ($parts as $part) {
+            $url .= urlencode($part) . '/';
+        }
 
-class BasiCredentials
-{
-
-    private string $username;
-    private string $password;
-
-
-    /**
-     * Get the value of username
-     *
-     * @return string
-     */
-    public function getUsername(): string
-    {
-        return $this->username;
+        return $url;
     }
 
-    /**
-     * Set the value of username
-     *
-     * @param string $username
-     *
-     * @return self
-     */
-    public function setUsername(string $username): self
-    {
-        $this->username = $username;
-
-        return $this;
-    }
-
-    /**
-     * Get the value of password
-     *
-     * @return string
-     */
-    public function getPassword(): string
-    {
-        return $this->password;
-    }
-
-    /**
-     * Set the value of password
-     *
-     * @param string $password
-     *
-     * @return self
-     */
-    public function setPassword(string $password): self
-    {
-        $this->password = $password;
-
-        return $this;
-    }
 }

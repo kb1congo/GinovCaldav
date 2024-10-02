@@ -3,65 +3,77 @@
 namespace Ginov\CaldavPlugs\Plateforms;
 
 use App\HttpTools;
+use DateTime;
 use Sabre\VObject\Reader;
 use Ginov\CaldavPlugs\Http;
 use Ginov\CaldavPlugs\Factory;
+use Ginov\CaldavPlugs\Plateform;
+use Ginov\CaldavPlugs\OAuthInterface;
 use Ginov\CaldavPlugs\Dto\EventCalDAV;
 use Ginov\CaldavPlugs\Dto\CalendarCalDAV;
-use Ginov\CaldavPlugs\Plateform;
+use Ginov\CaldavPlugs\Dto\Attendee;
 use Ginov\CaldavPlugs\PlateformUserInterface;
-use Symfony\Component\HttpFoundation\sendHttpRequest;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\sendHttpRequest;
+use Ginov\CaldavPlugs\Plateforms\Credentials\GoogleUser;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
-class GoogleUser implements PlateformUserInterface
-{
 
-    private string $token;
-
-    public function setToken(string $token): self
-    {
-        $this->token = $token;
-
-        return $this;
-    }
-
-    public function getToken(): string
-    {
-        return $this->token;
-    }
-
-    public function __toString(): string
-    {
-        return $this->token;
-    }
-}
-
-class Google extends Factory
+class Google extends Factory implements OAuthInterface
 {
     private string $calDAVUrl;
     private string $certPath;
-    /* private string $scope;
-    private string $redirect_uri;
-    private $client_id; */
+
+    private string $clientID;
+    private string $secret;
+    private string $redirectUri;
+    private string $scope;
 
     public function __construct(private ParameterBagInterface $parameters)
     {
         $this->srvUrl = $parameters->get('google.srv.url');
         $this->calDAVUrl = $parameters->get('google.caldav.url');
+
+        $this->clientID = $parameters->get('google.client.id');
+        $this->secret = $parameters->get('google.client.secret');
+        $this->redirectUri = $parameters->get('google.redirect.uri');
+        $this->scope = $parameters->get('google.scope');
         // string $scope, string $redirect_uri, $client_id
     }
 
     public function getOAuthUrl(): string
     {
-        return "https://accounts.google.com/o/oauth2/v2/auth?scope=" .
-            $this->parameters->get('google.scope') . "&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=" .
-            $this->parameters->get('google.redirect.uri') . "&client_id=" .
-            $this->parameters->get('google.client.id');
+        return "https://accounts.google.com/o/oauth2/v2/auth?scope=" . $this->scope . "&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=" . $this->redirectUri . "&client_id=" . $this->clientID;
     }
 
-    public function login(PlateformUserInterface $user): PlateformUserInterface
+    public function getOAuthToken(Request $request): array
+    {
+        //******* verifie le state $request->query->get('state')*/
+        $response = (new Http('https://oauth2.googleapis.com'))
+            ->http()
+            ->sendHttpRequest(
+                'POST',
+                "/token",
+                ["Content-Type" => "application/x-www-form-urlencoded"],
+                http_build_query([
+                    'code' => $request->query->get('code'),
+                    'client_id' => $this->clientID,
+                    'client_secret' => $this->secret,
+                    'redirect_uri' => $this->redirectUri,
+                    'grant_type' => 'authorization_code',
+                ])
+            );
+
+        if ($response->getStatus() != Response::HTTP_OK)
+            throw new \Exception($response->getStatusText(), $response->getStatus());
+
+        return json_decode($response->getBodyAsString(), true);
+    }
+
+    public function refreshOAuthToken() {}
+
+    public function ___login(PlateformUserInterface $user): PlateformUserInterface
     {
         /** @var GoogleUser $user */
         $user = $user;
@@ -71,7 +83,7 @@ class Google extends Factory
         return $user;
     }
 
-    public function kokokoo(Request $request): PlateformUserInterface
+    public function login(Request $request): PlateformUserInterface
     {
         /** @var GoogleUser $user */
         $user = (new GoogleUser())
@@ -80,56 +92,60 @@ class Google extends Factory
         return $user;
     }
 
-    public function calendar(string $credentials, string $calID): CalendarCalDAV
+    public function getCalendar(string $credentials, string $calID): CalendarCalDAV
     {
         $response = (new Http($this->srvUrl))
             ->http()
             ->sendHttpRequest(
                 'GET',
                 "calendars/$calID",
-                ['Authorization' => 'Bearer ' . $credentials]
+                ["Content-Type" => "application/json", 'Authorization' => 'Bearer ' . $credentials]
             );
 
         if ($response->getStatus() != Response::HTTP_OK)
-            throw new \Exception($response->getBodyAsString(), $response->getStatus());
+            throw new \Exception($response->getStatusText(), $response->getStatus());
 
-        $json = json_decode($response->getBodyAsString(), true);
+        $json = json_decode($response->getBodyAsString());
+
 
         return (new CalendarCalDAV($calID))
-            ->setCtag($json['etag'])
-            ->setDisplayName($json['summary'])
-            ->setDescription($json['summary'])
-            ->setTimeZone($json['timeZone']);
+            ->setCtag($json->etag)
+            ->setDisplayName($json->summary)
+            ->setDescription($json->summary)
+            ->setTimeZone($json->timeZone);
     }
 
-    public function calendars(string $credentials): array
+    public function getCalendars(string $credentials): array
     {
         $response = (new Http($this->srvUrl))
             ->http()
             ->sendHttpRequest(
                 'GET',
                 'users/me/calendarList',
-                ['Authorization' => 'Bearer ' . $credentials]
+                [
+                    "Content-Type" => "application/json",
+                    'Authorization' => 'Bearer ' . $credentials
+                ]
             );
 
         if ($response->getStatus() != Response::HTTP_OK)
-            throw new \Exception($response->getBodyAsString(), $response->getStatus());
+            throw new \Exception($response->getStatusText(), $response->getStatus());
 
-
-        $json = json_decode($response->getBodyAsString(), true);
+        $json = json_decode($response->getBodyAsString());
 
         $items = [];
-        foreach ($json['items'] as $value) {
-            $items[] = (new CalendarCalDAV($value['id']))
-                ->setCtag($value['etag'])
-                ->setDisplayName($value['summary'])
-                ->setDescription($value['summary'])
-                ->setTimeZone($value['timeZone'])
-                ->setRBGcolor($value['backgroundColor']);
+        foreach ($json->items as $value) {
+            $items[] = (new CalendarCalDAV($value->summary))
+                ->setCalendarID($value->id)
+                ->setCtag($value->etag)
+                ->setDisplayName($value->summary)
+                ->setDescription($value->summary)
+                ->setTimeZone($value->timeZone)
+                ->setRBGcolor($value->backgroundColor);
         }
 
         return array(
-            'next' => $json['nextSyncToken'],
+            'nextSyncToken' => $json->nextSyncToken,
             'items' => $items
         );
     }
@@ -143,65 +159,255 @@ class Google extends Factory
                 'calendars',
                 ['Content-Type' => 'application/json', 'Authorization' => 'Bearer ' . $credentials],
                 (json_encode([
-                    'summary' => $calendar->getCalendarID(),
+                    'summary' => $calendar->getDisplayName(),
                     'timeZone' => $calendar->getTimeZone(),
                     'description' => $calendar->getDescription()
                 ]))
             );
 
         if ($response->getStatus() != Response::HTTP_OK)
-            throw new \Exception($response->getBodyAsString(), $response->getStatus());
+            throw new \Exception($response->getStatusText(), $response->getStatus());
 
-        /** @var array */
-        $json = json_decode($response->getBodyAsString(), true);
+        $json = json_decode($response->getBodyAsString());
 
-        return (new CalendarCalDAV($json['id']))
-            ->setCtag($json['etag'])
-            ->setDisplayName($json['summary'])
-            ->setDescription($json['description'])
-            ->setTimeZone($json['timeZone']);
+        return (new CalendarCalDAV($json->summary))
+            ->setCalendarID($json->id)
+            ->setCtag($json->etag)
+            ->setDisplayName($json->summary)
+            ->setDescription($json->description)
+            ->setTimeZone($json->timeZone);
     }
 
     public function updateCalendar(string $credentials, CalendarCalDAV $calendar): CalendarCalDAV
     {
-        return new CalendarCalDAV($calendar->getCalendarID());
+        $response = (new Http($this->srvUrl))
+            ->http()
+            ->sendHttpRequest(
+                'PUT',
+                'calendars/' . $calendar->getCalendarID(),
+                ['Content-Type' => 'application/x-www-form-urlencoded', 'Authorization' => 'Bearer ' . $credentials],
+                (json_encode([
+                    'summary' => $calendar->getDisplayName(),
+                    'timeZone' => $calendar->getTimeZone(),
+                    'description' => $calendar->getDescription()
+                ]))
+            );
+
+        if ($response->getStatus() != Response::HTTP_OK)
+            throw new \Exception($response->getStatusText(), $response->getStatus());
+
+        $json = json_decode($response->getBodyAsString());
+
+        return (new CalendarCalDAV($calendar->getDisplayName()))
+            ->setCalendarID($json->id)
+            ->setCtag($json->etag)
+            ->setDisplayName($json->summary)
+            ->setDescription($json->description)
+            ->setTimeZone($json->timeZone);
     }
 
     public function deleteCalendar(string $credentials, string $calID)
     {
         $response = (new Http($this->srvUrl))
             ->http()
-            ->sendHttpRequest('DELETE', 'calendars');
+            ->sendHttpRequest(
+                'DELETE',
+                "calendars/$calID",
+                [
+                    "Content-Type" => "application/json",
+                    'Authorization' => 'Bearer ' . $credentials
+                ]
+            );
+
+        if ($response->getStatus() != Response::HTTP_NO_CONTENT)
+            throw new \Exception($response->getStatusText(), $response->getStatus());
+
+
+        return  $calID;
+    }
+
+    public function getEvents(string $credentials, string $calID, int $timeMin, int $timeMax): array
+    {
+        $params = [];
+        if ($timeMin) $params['timeMin'] = date('Y-m-d\TH:i:sP', $timeMin);
+        if ($timeMax) $params['timeMax'] = date('Y-m-d\TH:i:sP', $timeMax);
+
+        dd("calendars/$calID/events?".http_build_query($params));
+
+        $response = (new Http($this->srvUrl))
+            ->http()
+            ->sendHttpRequest(
+                'GET',
+                "calendars/$calID/events?".http_build_query($params),
+                ["Content-Type" => "application/json", 'Authorization' => 'Bearer ' . $credentials]
+            );
 
         if ($response->getStatus() != Response::HTTP_OK)
-            throw new \Exception($response->getBodyAsString(), $response->getStatus());
+            throw new \Exception($response->getStatusText(), $response->getStatus());
 
-        /** @var array */
-        $json = json_decode($response->getBodyAsString(), true);
+        $json = json_decode($response->getBodyAsString());
 
-        return  $json;
+        $items = [];
+
+        foreach ($json->items as $event) {
+
+            $items[] = (new EventCalDAV())
+                ->setSummary($event->summary ?? '')
+                ->setDescription($event->description ?? '')
+                ->setLocation($event->location ?? '')
+                ->setDateStart($event->start->dateTime)
+                ->setDateEnd($event->end->dateTime)
+                ->setTimeZoneID($event->start->timeZone)
+                ->setRrule($event->recurrence[0] ?? null) // a vérifier****************
+                ->setUid($event->id);
+        }
+
+        return [
+            'nextSyncToken' => $json->nextSyncToken,
+            'events' => $items
+        ];
     }
 
-    public function events(string $credentials, string $idCal): array
+    public function getEvent(string $credentials, string $calID, string $eventID): EventCalDAV
     {
-        $events = (new HttpTools($this->calDAVUrl, $this->certPath))
-            ->get("$idCal/events", [], [
-                "Content-Type" => "application/json",
-                'Authorization' => "Bearer " . $credentials
-            ])
-            ->brut()
-            ->getBody();
+        $response = (new Http($this->srvUrl))
+            ->http()
+            ->sendHttpRequest(
+                'GET',
+                "calendars/$calID/events/$eventID",
+                ["Content-Type" => "application/json", 'Authorization' => 'Bearer ' . $credentials]
+            );
 
-        return $this->parse((string)$events);
+        if ($response->getStatus() != Response::HTTP_OK)
+            throw new \Exception($response->getStatusText(), $response->getStatus());
+
+        return self::parseEvent(json_decode($response->getBodyAsString()));
     }
-
 
     public function createEvent(string $credentials, string $calID, EventCalDAV $event): EventCalDAV
     {
-        return new EventCalDAV();
+        $response = (new Http($this->srvUrl))
+            ->http()
+            ->sendHttpRequest(
+                'POST',
+                "calendars/$calID/events",
+                ["Content-Type" => "application/json", 'Authorization' => 'Bearer ' . $credentials],
+                (json_encode(
+                    [
+                        'summary' => $event->getSummary(),
+                        'description' => $event->getDescription() ? $event->getDescription() : $event->getSummary(),
+                        'start' => [
+                            'dateTime' => self::parseTime($event->getDateStart()),
+                            'timeZone' => $event->getTimeZoneID(),
+                        ],
+                        'end' => [
+                            'dateTime' => self::parseTime($event->getDateEnd()),
+                            'timeZone' => $event->getTimeZoneID(),
+                        ],
+                        'attendees' => $event->getAttendees(),
+                        "sendUpdates" => "all"
+                    ]
+                ))
+            );
+
+        if ($response->getStatus() != Response::HTTP_OK)
+            throw new \Exception($response->getStatusText(), $response->getStatus());
+
+        return self::parseEvent(json_decode($response->getBodyAsString()));
     }
 
-    private static function parse($icalendarData): array
+    public function  deleteEvent(string $credentials, string $calID, string $eventID): string
+    {
+        $response = (new Http($this->srvUrl))
+            ->http()
+            ->sendHttpRequest(
+                'DELETE',
+                "calendars/$calID/events/$eventID?sendUpdates=all",
+                ["Content-Type" => "application/json", 'Authorization' => 'Bearer ' . $credentials]
+            );
+
+        if ($response->getStatus() != Response::HTTP_NO_CONTENT)
+            throw new \Exception($response->getStatusText(), $response->getStatus());
+
+        return $eventID;
+    }
+
+    public function updateEvent(string $credentials, string $calID, string $eventID, EventCalDAV $event): EventCalDAV
+    {
+        $response = (new Http($this->srvUrl))
+            ->http()
+            ->sendHttpRequest(
+                'PUT',
+                "calendars/$calID/events/$eventID",
+                ['Content-Type' => 'application/x-www-form-urlencoded', 'Authorization' => 'Bearer ' . $credentials],
+                (json_encode([
+                    'summary' => $event->getSummary(),
+                    'description' => $event->getDescription() ? $event->getDescription() : $event->getSummary(),
+                    'start' => [
+                        'dateTime' => self::parseTime($event->getDateStart()),
+                        'timeZone' => $event->getTimeZoneID(),
+                    ],
+                    'end' => [
+                        'dateTime' => self::parseTime($event->getDateEnd()),
+                        'timeZone' => $event->getTimeZoneID(),
+                    ],
+                    'attendees' => $event->getAttendees(),
+                    "sendUpdates" => "all"
+                ]))
+            );
+
+        if ($response->getStatus() != Response::HTTP_OK)
+            throw new \Exception($response->getStatusText(), $response->getStatus());
+
+        return self::parseEvent(json_decode($response->getBodyAsString()));
+    }
+
+    public static function parseAttendees(array $attendees):array
+    {
+        return [];
+    }
+
+    //*******a mettre dans linterface en protected */
+    private static function parseTime(mixed $date): string
+    {
+        return (is_int($date)) 
+            ? date('Y-m-d\TH:i:sP', $date) 
+            : (new \DateTime($date))->format('Y-m-d\TH:i:sP');
+    }
+
+    //*******a mettre dans linterface en protected */
+    private static function parseEvent($googleEvent): EventCalDAV
+    {
+        // a reecrire plus proprement***************
+        $attendees = array_map(function ($n) {
+            return new Attendee($n->email);
+        }, $googleEvent->attendees ?? []);
+
+        return (new EventCalDAV())
+            ->setSummary($googleEvent->summary ?? '')
+            ->setDescription($googleEvent->description ?? '')
+            ->setLocation($googleEvent->location ?? '')
+            ->setDateStart($googleEvent->start->dateTime)
+            ->setDateEnd($googleEvent->end->dateTime)
+            ->setTimeZoneID($googleEvent->start->timeZone)
+            ->setRrule($googleEvent->recurrence[0] ?? null) // a vérifier****************
+            ->setAttendees($attendees)
+            ->setUid($googleEvent->id);
+    }
+
+    //*******a mettre dans linterface en protected */
+    private static function parseCalendar($googleCalendar, string $calID): CalendarCalDAV
+    {
+        return (new CalendarCalDAV($googleCalendar['displayname']))
+            ->setCalendarID($calID)
+            ->setCtag($googleCalendar['etag'])
+            ->setDisplayName($googleCalendar['summary'])
+            ->setDescription($googleCalendar['summary'])
+            ->setTimeZone($googleCalendar['timeZone']);
+    }
+
+    //*******a mettre dans linterface en protected */
+    private static function parseCalDAVEvent($icalendarData): array
     {
         $vcalendar = Reader::read($icalendarData);
 
@@ -223,6 +429,7 @@ class Google extends Factory
         return $results;
     }
 
+    //*******a mettre dans linterface PlateformUserIntereface en protected */
     private static function parseCredentials(string $credentials): PlateformUserInterface
     {
         $tmp = explode(';', $credentials);

@@ -15,7 +15,7 @@ interface PlateformInterface
      * @param Request $request
      * @return PlateformUserInterface
      */
-    public function kokokoo(Request $request): PlateformUserInterface;
+    public function login(Request $request): PlateformUserInterface;
 
     /**
      * Undocumented function
@@ -24,7 +24,7 @@ interface PlateformInterface
      * @param string $calID
      * @return CalDAV
      */
-    public function calendar(string $credentials, string $calID): CalendarCalDAV;
+    public function getCalendar(string $credentials, string $calID): CalendarCalDAV;
 
     /**
      * Undocumented function
@@ -32,7 +32,7 @@ interface PlateformInterface
      * @param string $credentials
      * @return array
      */
-    public function calendars(string $credentials): array;
+    public function getCalendars(string $credentials): array;
 
     /**
      * Undocumented function
@@ -68,7 +68,15 @@ interface PlateformInterface
      * @param string $calID
      * @return array
      */
-    public function events(string $credentials, string $calID): array;
+    public function getEvents(string $credentials, string $calID, int $timeMin, int $timeMax): array;
+
+    /**
+     *  @param string $credentials
+     *  @param string $calID
+     *  @param string $eventID
+     *  @return EventCalDAV
+     */
+    public function getEvent(string $credentials, string $eventID, string $calID): EventCalDAV;
 
     /**
      * Undocumented function
@@ -78,4 +86,21 @@ interface PlateformInterface
      * @return EventCalDAV
      */
     public function createEvent(string $credentials, string $calID, EventCalDAV $event): EventCalDAV;
+
+    /**
+     *  @param string $credentials
+     *  @param string $calID
+     *  @param string $eventID
+     *  @return string
+     */
+    public function deleteEvent(string $credentials, string $calID, string $eventID): string;
+
+    /**
+     *  @param string $credentials
+     *  @param string $calID
+     *  @param string $eventID
+     *  @param EventCalDAV $event
+     *  @return EventCalDAV
+     */
+    public function updateEvent(string $credentials, string $calID, string $eventID, EventCalDAV $event): EventCalDAV;
 }

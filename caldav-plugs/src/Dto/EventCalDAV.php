@@ -1,34 +1,38 @@
 <?php
+
 namespace Ginov\CaldavPlugs\Dto;
 
 use DateTime;
 use DateTimeZone;
+use Ginov\CaldavPlugs\Dto\Attendee;
 use Symfony\Component\Validator\Constraints as Assert;
 
-class EventCalDAV{
+class EventCalDAV
+{
 
     const DEFAULT_TIME_ZONE = 'Europe/Paris';
 
+    private string $uid;
+
     private string $timeZoneID;
 
-    #[Assert\NotNull]
-    #[Assert\NotBlank]
+    #[Assert\NotNull(message:'dateStart is null')]
+    #[Assert\NotBlank(message:'dateStart is blank')]
     #[Assert\DateTime]
     private string $dateStart;
 
-    #[Assert\NotNull]
-    #[Assert\NotBlank]
+    #[Assert\NotNull(message:'dateEnd is null')]
+    #[Assert\NotBlank(message:'dateEnd is blank')]
     #[Assert\DateTime]
     private string $dateEnd;
-    
-    private string $uid;
 
-    #[Assert\NotNull]
-    #[Assert\NotBlank]
+    #[Assert\NotNull(message:'summary is null')]
+    #[Assert\NotBlank(message:'summary is blank')]
     #[Assert\Length(
-        min: 4, max: 255,
-        minMessage: 'Summary must be at least {{ limit }} characters long',
-        maxMessage: 'Summary cannot be longer than {{ limit }} characters',
+        min: 4,
+        max: 255,
+        minMessage: 'summary must be at least {{ limit }} characters long',
+        maxMessage: 'summary cannot be longer than {{ limit }} characters',
     )]
     private string $summary;
 
@@ -36,20 +40,24 @@ class EventCalDAV{
 
     private string $location;
 
-    private string $rrule;
+    private ?string $rrule;
 
     #[Assert\DateTime]
     private string $createAt;
-    
+
+    /** @var Attendee[] */
+    private $attendees;
+
 
     public function __construct()
     {
         $this->createAt = (new DateTime())->format('Y-m-d H:i:s');
         $this->timeZoneID = self::DEFAULT_TIME_ZONE;
-        $this->uid = md5(time());
+        // $this->uid = md5(time());
         $this->description = '';
         $this->location = '';
-        $this->rrule = '';
+        $this->rrule = null;
+        $this->attendees = [];
     }
 
     /**
@@ -93,9 +101,9 @@ class EventCalDAV{
     }
 
     /**
-     * @return string
+     * @return ?string
      */
-    public function getUid(): string
+    public function getUid(): ?string
     {
         return $this->uid;
     }
@@ -103,11 +111,11 @@ class EventCalDAV{
     /**
      * Set the value of event uid
      *
-     * @param string $uid
+     * @param ?string $uid
      *
      * @return self
      */
-    public function setUid(string $uid): self
+    public function setUid(?string $uid): self
     {
         $this->uid = $uid;
 
@@ -185,64 +193,28 @@ class EventCalDAV{
     }
 
     /**
-     * @return string
+     * Set the value of attendees
+     *
+     * @param Attendee[] $attendees
+     *
+     * @return self
      */
-    public function __toString(): string
+    public function setAttendees(array $attendees)
     {
-        $start = self::formatDate($this->dateStart);
-        $end = self::formatDate($this->dateEnd);
-        $createAt = self::formatDate($this->createAt);
-
-        return <<<EOD
-        BEGIN:VCALENDAR
-        PRODID:-//SomeExampleStuff//EN
-        VERSION:2.0
-        BEGIN:VTIMEZONE
-        TZID:$this->timeZoneID
-        X-LIC-LOCATION:$this->location
-        BEGIN:DAYLIGHT
-        TZOFFSETFROM:+0100
-        TZOFFSETTO:+0200
-        TZNAME:CEST
-        DTSTART:$start
-        RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3
-        END:DAYLIGHT
-        BEGIN:STANDARD
-        TZOFFSETFROM:+0200
-        TZOFFSETTO:+0100
-        TZNAME:CET
-        DTSTART:$start
-        RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10
-        END:STANDARD
-        END:VTIMEZONE
-        BEGIN:VEVENT
-        CREATED:$createAt
-        LAST-MODIFIED:20140403T091044Z
-        DTSTAMP:20140416T091044Z
-        UID:$this->uid
-        SUMMARY:$this->summary
-        DTSTART;TZID=$this->timeZoneID:$start
-        DTEND;TZID=$this->timeZoneID:$end
-        LOCATION:$this->location
-        DESCRIPTION:$this->description
-        END:VEVENT
-        END:VCALENDAR
-        EOD;
+        $this->attendees = $attendees;
+        return $this;
     }
 
-    public static function formatDate(string $mDate){
 
-        $date = new DateTime($mDate);
-
-        // Convertir l'heure en UTC (si nécessaire)
-        $date->setTimezone(new DateTimeZone('UTC'));
-
-        // Formater la date et l'heure au format iCalendar (ISO 8601)
-        $formattedDate = $date->format('Ymd\THis\Z');
-
-        return $formattedDate; // Affiche quelque chose comme 20240809T101245Z
+    /**
+     * Get the value of attendees
+     * 
+     * @return Attendee[] $attendees
+     */
+    public function getAttendees(): array
+    {
+        return $this->attendees;
     }
-
 
     /**
      * Get the value of description
@@ -295,9 +267,9 @@ class EventCalDAV{
     /**
      * Get the value of rrule
      *
-     * @return string
+     * @return string | null
      */
-    public function getRrule(): string
+    public function getRrule(): ?string
     {
         return $this->rrule;
     }
@@ -305,14 +277,108 @@ class EventCalDAV{
     /**
      * Set the value of rrule
      *
-     * @param string $rrule
+     * @param string $rrule | null
      *
      * @return self
      */
-    public function setRrule(string $rrule): self
+    public function setRrule(?string $rrule): self
     {
         $this->rrule = $rrule;
 
         return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function __toString(): string
+    {
+        $start = self::formatDate($this->dateStart);
+        $end = self::formatDate($this->dateEnd);
+        $createAt = self::formatDate($this->createAt);
+
+        $event = "BEGIN:VCALENDAR\n";
+        $event .= "PRODID:-//GinovStuff//FR\n";
+        $event .= "VERSION:2.0\n";
+        $event .= "BEGIN:VEVENT\n";
+        $event .= "CREATED:$createAt\n";
+        $event .= "UID:$this->uid\n";
+        $event .= "SUMMARY:$this->summary\n";
+        $event .= "DESCRIPTION:$this->description.\n";
+        $event .= "DTSTART;TZID=$this->timeZoneID:$start\n";
+        $event .= "RRULE:$this->rrule\n";
+        $event .= "DTEND;TZID=$this->timeZoneID:$end\n";
+        $event .= "LOCATION:$this->location\n";
+
+        $event .= $this->parseAttendees();
+
+        $event .= "END:VEVENT\n";
+        $event .= "END:VCALENDAR\n";
+
+        return $event;
+
+        /* return <<<EOD
+        BEGIN:VCALENDAR
+        PRODID:-//SomeExampleStuff//EN
+        VERSION:2.0
+        BEGIN:VTIMEZONE
+        TZID:$this->timeZoneID
+        X-LIC-LOCATION:$this->location
+        BEGIN:DAYLIGHT
+        TZOFFSETFROM:+0100
+        TZOFFSETTO:+0200
+        TZNAME:CEST
+        DTSTART:$start
+        RRULE:$this->rrule
+        END:DAYLIGHT
+        BEGIN:STANDARD
+        TZOFFSETFROM:+0200
+        TZOFFSETTO:+0100
+        TZNAME:CET
+        DTSTART:$start
+        RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10
+        END:STANDARD
+        END:VTIMEZONE
+        BEGIN:VEVENT
+        CREATED:$createAt
+        LAST-MODIFIED:20140403T091044Z
+        DTSTAMP:20140416T091044Z
+        UID:$this->uid
+        SUMMARY:$this->summary
+        DTSTART;TZID=$this->timeZoneID:$start
+        DTEND;TZID=$this->timeZoneID:$end
+        LOCATION:$this->location
+        DESCRIPTION:$this->description
+        END:VEVENT
+        END:VCALENDAR
+        EOD; */
+    }
+
+    private function parseAttendees(): string
+    {
+        $result = '';
+        foreach ($this->attendees as $attendee) {
+            $name = $attendee->getName();
+            $email = $attendee->getEmail();
+            $rsvp = $attendee->getRvps();
+
+            $result .= "ATTENDEE;CN=$name;RSVP=$rsvp;mailto:$email\n";
+        }
+
+        return $result;
+    }
+
+    public static function formatDate(string $mDate)
+    {
+
+        $date = new DateTime($mDate);
+
+        // Convertir l'heure en UTC (si nécessaire)
+        $date->setTimezone(new DateTimeZone('UTC'));
+
+        // Formater la date et l'heure au format iCalendar (ISO 8601)
+        $formattedDate = $date->format('Ymd\THis\Z');
+
+        return $formattedDate; // Affiche quelque chose comme 20240809T101245Z
     }
 }

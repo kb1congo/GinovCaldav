@@ -7,6 +7,8 @@ use Ginov\CaldavPlugs\Plateforms\Baikal;
 use Ginov\CaldavPlugs\Plateforms\Google;
 use Ginov\CaldavPlugs\Plateforms\Zimbra;
 use Ginov\CaldavPlugs\PlateformInterface;
+use Ginov\CaldavPlugs\Plateforms\Bluemind;
+use Ginov\CaldavPlugs\Plateforms\Outlook;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 abstract class Factory implements PlateformInterface
@@ -16,7 +18,9 @@ abstract class Factory implements PlateformInterface
     private static array $_plateformMap = [
         'baikal' => Baikal::class,
         'google' => Google::class,
+        'outlook' => Outlook::class,
         'zimbra' => Zimbra::class,
+        'bluemind' => Bluemind::class,
     ];
 
     /**
