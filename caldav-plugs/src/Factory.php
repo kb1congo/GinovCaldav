@@ -7,8 +7,12 @@ use Ginov\CaldavPlugs\Plateforms\Baikal;
 use Ginov\CaldavPlugs\Plateforms\Google;
 use Ginov\CaldavPlugs\Plateforms\Zimbra;
 use Ginov\CaldavPlugs\PlateformInterface;
+<<<<<<< HEAD
 use Ginov\CaldavPlugs\Plateforms\Bluemind;
 use Ginov\CaldavPlugs\Plateforms\Outlook;
+=======
+use Ginov\CaldavPlugs\Plateforms\OutLook;
+>>>>>>> e09e1f8e3a0df83e58ed0c831f917fb0f9fa8b56
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 abstract class Factory implements PlateformInterface
@@ -20,7 +24,11 @@ abstract class Factory implements PlateformInterface
         'google' => Google::class,
         'outlook' => Outlook::class,
         'zimbra' => Zimbra::class,
+<<<<<<< HEAD
         'bluemind' => Bluemind::class,
+=======
+        'outlook' => OutLook::class,
+>>>>>>> e09e1f8e3a0df83e58ed0c831f917fb0f9fa8b56
     ];
 
     /**

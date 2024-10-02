@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8ef76fdb06e1a27c9a322c95b5410ae6",
+    "content-hash": "55adc9f2ac2fcdfbb26e153078de0c82",
     "packages": [
         {
             "name": "brick/math",
@@ -467,66 +467,6 @@
                 "source": "https://github.com/php-enqueue/enqueue-dev"
             },
             "time": "2023-03-23T09:50:55+00:00"
-        },
-        {
-            "name": "enqueue/rdkafka",
-            "version": "0.10.20",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/php-enqueue/rdkafka.git",
-                "reference": "d1dfe0422a15f25ef4dfda5eff5cf29633079949"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/php-enqueue/rdkafka/zipball/d1dfe0422a15f25ef4dfda5eff5cf29633079949",
-                "reference": "d1dfe0422a15f25ef4dfda5eff5cf29633079949",
-                "shasum": ""
-            },
-            "require": {
-                "ext-rdkafka": "^4.0|^5.0|^6.0",
-                "php": "^7.4|^8.0",
-                "queue-interop/queue-interop": "^0.8.1"
-            },
-            "require-dev": {
-                "enqueue/null": "0.10.x-dev",
-                "enqueue/test": "0.10.x-dev",
-                "kwn/php-rdkafka-stubs": "^2.0.3",
-                "phpunit/phpunit": "^9.5",
-                "queue-interop/queue-spec": "^0.6.2"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "0.10.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Enqueue\\RdKafka\\": ""
-                },
-                "exclude-from-classmap": [
-                    "/Tests/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "Message Queue Kafka Transport",
-            "homepage": "https://enqueue.forma-pro.com/",
-            "keywords": [
-                "kafka",
-                "messaging",
-                "queue"
-            ],
-            "support": {
-                "docs": "https://github.com/php-enqueue/enqueue-dev/blob/master/docs/index.md",
-                "email": "opensource@forma-pro.com",
-                "forum": "https://gitter.im/php-enqueue/Lobby",
-                "issues": "https://github.com/php-enqueue/enqueue-dev/issues",
-                "source": "https://github.com/php-enqueue/enqueue-dev"
-            },
-            "time": "2023-08-08T20:59:25+00:00"
         },
         {
             "name": "firebase/php-jwt",
