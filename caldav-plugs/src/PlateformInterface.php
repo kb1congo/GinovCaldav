@@ -4,13 +4,14 @@ namespace Ginov\CaldavPlugs;
 
 use Ginov\CaldavPlugs\Dto\CalendarCalDAV;
 use Ginov\CaldavPlugs\Dto\EventCalDAV;
+use Ginov\CaldavPlugs\Dto\Attendee;
 use Ginov\CaldavPlugs\PlateformUserInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 interface PlateformInterface
 {
     /**
-     * Undocumented function
+     * Singin and get your credentials for next connexion
      *
      * @param Request $request
      * @return PlateformUserInterface
@@ -18,24 +19,24 @@ interface PlateformInterface
     public function login(Request $request): PlateformUserInterface;
 
     /**
-     * Undocumented function
+     * Get one calendar by his ID
      *
      * @param string $credentials
      * @param string $calID
-     * @return CalDAV
+     * @return CalendarCalDAV
      */
     public function getCalendar(string $credentials, string $calID): CalendarCalDAV;
 
     /**
-     * Undocumented function
+     * Get all calendars
      *
      * @param string $credentials
-     * @return array
+     * @return CalendarCalDAV[]
      */
     public function getCalendars(string $credentials): array;
 
     /**
-     * Undocumented function
+     * Create a new Calendar
      *
      * @param string $credentials
      * @param CalendarCalDAV $calendar
@@ -44,7 +45,7 @@ interface PlateformInterface
     public function createCalendar(string $credentials, CalendarCalDAV $calendar):CalendarCalDAV;
 
     /**
-     * Undocumented function
+     * Delete a calendar by his ID
      *
      * @param string $credentials
      * @param string $calID
@@ -53,7 +54,7 @@ interface PlateformInterface
     public function deleteCalendar(string $credentials, string $calID);
 
     /**
-     * Undocumented function
+     * Update a calendar
      *
      * @param string $credentials
      * @param CalendarCalDAV $calendar
@@ -62,7 +63,7 @@ interface PlateformInterface
     public function updateCalendar(string $credentials, CalendarCalDAV $calendar): CalendarCalDAV;
 
     /**
-     * Undocumented function
+     * Get all events beetwen timeMin and timeMax
      *
      * @param string $credentials
      * @param string $calID
@@ -71,7 +72,9 @@ interface PlateformInterface
     public function getEvents(string $credentials, string $calID, int $timeMin, int $timeMax): array;
 
     /**
-     *  @param string $credentials
+     * Get on event by his ID 
+     * 
+     * @param string $credentials
      *  @param string $calID
      *  @param string $eventID
      *  @return EventCalDAV
@@ -79,7 +82,7 @@ interface PlateformInterface
     public function getEvent(string $credentials, string $eventID, string $calID): EventCalDAV;
 
     /**
-     * Undocumented function
+     * Create a new Event
      *
      * @param string $credentials
      * @param EventCalDAV $event
@@ -88,6 +91,19 @@ interface PlateformInterface
     public function createEvent(string $credentials, string $calID, EventCalDAV $event): EventCalDAV;
 
     /**
+     * Update an event by his ID and his calender_id
+     *  
+     * @param string $credentials
+     *  @param string $calID
+     *  @param string $eventID
+     *  @param EventCalDAV $event
+     *  @return EventCalDAV
+     */
+    public function updateEvent(string $credentials, string $calID, string $eventID, EventCalDAV $event): EventCalDAV;
+
+    /**
+     * Delete an event by his ID and his calender_id
+     * 
      *  @param string $credentials
      *  @param string $calID
      *  @param string $eventID
@@ -96,11 +112,11 @@ interface PlateformInterface
     public function deleteEvent(string $credentials, string $calID, string $eventID): string;
 
     /**
-     *  @param string $credentials
+     * (depricate)
+     * 
      *  @param string $calID
-     *  @param string $eventID
-     *  @param EventCalDAV $event
-     *  @return EventCalDAV
+     *  @return PlateformInterface
      */
-    public function updateEvent(string $credentials, string $calID, string $eventID, EventCalDAV $event): EventCalDAV;
+    public function setCalenedar(string $calID): PlateformInterface;
+
 }

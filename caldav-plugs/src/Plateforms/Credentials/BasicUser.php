@@ -3,10 +3,11 @@
 namespace Ginov\CaldavPlugs\Plateforms\Credentials;
 
 use Ginov\CaldavPlugs\PlateformUserInterface;
+use JsonSerializable;
 
 
 
-class BaikalUser implements PlateformUserInterface
+class BasicUser implements PlateformUserInterface, JsonSerializable
 {
     private string $username;
     private string $password;
@@ -62,6 +63,14 @@ class BaikalUser implements PlateformUserInterface
 
     public function __toString(): string
     {
-        return '';
+        return $this->username.';'.$this->password;
+    }
+
+    public function jsonSerialize(): mixed
+    {
+        return [
+            'username' => $this->username,
+            'password' => $this->password
+        ];
     }
 }

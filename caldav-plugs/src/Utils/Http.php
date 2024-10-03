@@ -1,6 +1,6 @@
 <?php
 
-namespace Ginov\CaldavPlugs;
+namespace Ginov\CaldavPlugs\Utils;
 
 
 use Sabre\HTTP\Client as HttpClient;

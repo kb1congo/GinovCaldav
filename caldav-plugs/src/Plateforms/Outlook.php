@@ -4,13 +4,14 @@ namespace Ginov\CaldavPlugs\Plateforms;
 
 use App\HttpTools;
 use Sabre\VObject\Reader;
-use Ginov\CaldavPlugs\Http;
+use Ginov\CaldavPlugs\Utils\Http;
 use Ginov\CaldavPlugs\Factory;
 use Ginov\CaldavPlugs\Plateform;
 use Ginov\CaldavPlugs\Dto\Attendee;
 use Ginov\CaldavPlugs\Dto\EventCalDAV;
 use Ginov\CaldavPlugs\Dto\CalendarCalDAV;
 use Ginov\CaldavPlugs\OAuthInterface;
+use Ginov\CaldavPlugs\PlateformInterface;
 use Ginov\CaldavPlugs\PlateformUserInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -78,7 +79,7 @@ class Outlook extends Factory implements OAuthInterface
 
         if ($response->getStatus() == Response::HTTP_BAD_REQUEST && $json['error'] == self::ERROR_INVALID_GRANT) {
             return [
-                'url' => urldecode($this->getAuthorization()),
+                'url' => urldecode($this->getAdminAuthorization()),
                 'message' => 'In your browser go to url above'
             ];
         }
@@ -273,6 +274,10 @@ class Outlook extends Factory implements OAuthInterface
 
     public function getEvents(string $credentials, string $calID, int $timeMin, int $timeMax): array
     {
+        $params = [];
+        if ($timeMin) $params['startDateTime'] = date('Y-m-d\TH:i:sP', $timeMin);
+        if ($timeMax) $params['endDateTime'] = date('Y-m-d\TH:i:sP', $timeMax);
+
         /** @var OutlookUser */
         $user = $this->parseCredentials($credentials);
 
@@ -280,7 +285,7 @@ class Outlook extends Factory implements OAuthInterface
             ->http()
             ->sendHttpRequest(
                 'GET',
-                "me/calendars/$calID/events",
+                "me/calendars/$calID/calendarView?".http_build_query($params),
                 ["Content-Type" => "application/json", 'Authorization' => 'Bearer ' . $user->getToken()]
             );
 
@@ -403,8 +408,7 @@ class Outlook extends Factory implements OAuthInterface
         return self::parseEvent(json_decode($response->getBodyAsString()));
     }
 
-    //*******a mettre dans linterface en protected */
-    private static function parseCalendar($outlookCalendar, string $calID): CalendarCalDAV
+    protected static function parseCalendar($outlookCalendar, string $calID): CalendarCalDAV
     {
         return (new CalendarCalDAV($outlookCalendar->name))
             ->setCalendarID($outlookCalendar->id)
@@ -414,8 +418,7 @@ class Outlook extends Factory implements OAuthInterface
             ->setRBGcolor($outlookCalendar->hexColor);
     }
 
-    //*******a mettre dans linterface en protected */
-    private static function parseEvent($outlookEvent): EventCalDAV
+    protected static function parseEvent($outlookEvent): EventCalDAV
     {
         // a reecrire plus proprement***************
         $attendees = array_map(function ($n) {
@@ -434,8 +437,7 @@ class Outlook extends Factory implements OAuthInterface
             ->setUid($outlookEvent->id);
     }
 
-    //*******a mettre dans linterface en protected */
-    private static function parseAttendees(array $attendees): array
+    protected static function parseAttendees(array $attendees): array
     {
         $attendees = [];
 
@@ -447,8 +449,7 @@ class Outlook extends Factory implements OAuthInterface
         return $attendees;
     }
 
-    //*******a mettre dans linterface en protected */
-    private static function toPlateformAttendees(array $attendees): array
+    protected static function toPlateformAttendees(array $attendees): array
     {
         $outlookAttendees = [];
 
@@ -466,15 +467,11 @@ class Outlook extends Factory implements OAuthInterface
                 'type' => 'required'
 
             ];
-
-            /* $rsvp = $attendee->status->response == 'none' ? FALSE : TRUE;
-            $attendees[] = new Attendee($attendee->emailAddress->address, $rsvp, $attendee->emailAddress->name); */
         }
 
         return $outlookAttendees;
     }
 
-    //*******a mettre dans linterface en protected */
     private static function toPlateformTime(string $date): string
     {
         // $dateTime = new \DateTime($date);
@@ -483,7 +480,7 @@ class Outlook extends Factory implements OAuthInterface
         return (new \DateTime($date))->format('Y-m-d\TH:i:sP');
     }
 
-    private static function parseCredentials(string $credentials): PlateformUserInterface
+    protected static function parseCredentials(string $credentials): PlateformUserInterface
     {
         $tmp = explode(';', $credentials);
 
@@ -491,6 +488,12 @@ class Outlook extends Factory implements OAuthInterface
             ->setToken($tmp[0])
             ->setUsername($tmp[1])
             ->setEmail($tmp[2]);
+    }
+
+    public function setCalenedar(string $calID): self
+    {
+        $this->calendarID = $calID;
+        return $this;
     }
 
 }

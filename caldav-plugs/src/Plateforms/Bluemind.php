@@ -4,7 +4,7 @@ namespace Ginov\CaldavPlugs\Plateforms;
 
 use App\HttpTools;
 use Sabre\VObject\Reader;
-use Ginov\CaldavPlugs\Http;
+use Ginov\CaldavPlugs\Utils\Http;
 use Ginov\CaldavPlugs\Factory;
 use Ginov\CaldavPlugs\Plateform;
 use Ginov\CaldavPlugs\Dto\Attendee;
@@ -355,17 +355,7 @@ class Bluemind extends Factory
         return new EventCalDAV();
     }
 
-    private static function parseCredentials(string $credentials): PlateformUserInterface
-    {
-        $tmp = explode(';', $credentials);
-
-        return (new BluemindUser())
-            ->setToken($tmp[0])
-            ->setUid($tmp[1])
-            ->setDomainUid($tmp[2]);
-    }
-
-    private static function parseAttendess(array $attendees): array
+    protected static function parseAttendees(array $attendees): array
     {
         $attendees = [];
 
@@ -376,4 +366,36 @@ class Bluemind extends Factory
 
         return $attendees;
     }
+
+    protected static function parseCalendar($plateformCalendar, string $calID): CalendarCalDAV
+    {
+        return new CalendarCalDAV('');
+    }
+
+    protected static function parseEvent($plateformEvent): EventCalDAV
+    {
+        return new EventCalDAV();
+    }
+
+    protected static function toPlateformAttendees(array $attendees): array
+    {
+        return [];
+    } 
+
+    protected static function parseCredentials(string $credentials): PlateformUserInterface
+    {
+        $tmp = explode(';', $credentials);
+
+        return (new BluemindUser())
+            ->setToken($tmp[0])
+            ->setUid($tmp[1])
+            ->setDomainUid($tmp[2]);
+    }
+
+    public function setCalenedar(string $calID): self
+    {
+        $this->calendarID = $calID;
+        return $this;
+    }
+
 }

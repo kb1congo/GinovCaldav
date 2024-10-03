@@ -5,7 +5,7 @@ namespace Ginov\CaldavPlugs\Plateforms;
 use App\HttpTools;
 use DateTime;
 use Sabre\VObject\Reader;
-use Ginov\CaldavPlugs\Http;
+use Ginov\CaldavPlugs\Utils\Http;
 use Ginov\CaldavPlugs\Factory;
 use Ginov\CaldavPlugs\Plateform;
 use Ginov\CaldavPlugs\OAuthInterface;
@@ -39,7 +39,7 @@ class Google extends Factory implements OAuthInterface
         $this->secret = $parameters->get('google.client.secret');
         $this->redirectUri = $parameters->get('google.redirect.uri');
         $this->scope = $parameters->get('google.scope');
-        // string $scope, string $redirect_uri, $client_id
+
     }
 
     public function getOAuthUrl(): string
@@ -232,7 +232,7 @@ class Google extends Factory implements OAuthInterface
         if ($timeMin) $params['timeMin'] = date('Y-m-d\TH:i:sP', $timeMin);
         if ($timeMax) $params['timeMax'] = date('Y-m-d\TH:i:sP', $timeMax);
 
-        dd("calendars/$calID/events?".http_build_query($params));
+        // dd("calendars/$calID/events?".http_build_query($params));
 
         $response = (new Http($this->srvUrl))
             ->http()
@@ -251,7 +251,9 @@ class Google extends Factory implements OAuthInterface
 
         foreach ($json->items as $event) {
 
-            $items[] = (new EventCalDAV())
+            $items[] = self::parseEvent($event);
+
+            /* $items[] = (new EventCalDAV())
                 ->setSummary($event->summary ?? '')
                 ->setDescription($event->description ?? '')
                 ->setLocation($event->location ?? '')
@@ -259,7 +261,7 @@ class Google extends Factory implements OAuthInterface
                 ->setDateEnd($event->end->dateTime)
                 ->setTimeZoneID($event->start->timeZone)
                 ->setRrule($event->recurrence[0] ?? null) // a vérifier****************
-                ->setUid($event->id);
+                ->setUid($event->id); */
         }
 
         return [
@@ -304,7 +306,7 @@ class Google extends Factory implements OAuthInterface
                             'dateTime' => self::parseTime($event->getDateEnd()),
                             'timeZone' => $event->getTimeZoneID(),
                         ],
-                        'attendees' => $event->getAttendees(),
+                        'attendees' => self::toPlateformAttendees($event->getAttendees()),
                         "sendUpdates" => "all"
                     ]
                 ))
@@ -314,22 +316,6 @@ class Google extends Factory implements OAuthInterface
             throw new \Exception($response->getStatusText(), $response->getStatus());
 
         return self::parseEvent(json_decode($response->getBodyAsString()));
-    }
-
-    public function  deleteEvent(string $credentials, string $calID, string $eventID): string
-    {
-        $response = (new Http($this->srvUrl))
-            ->http()
-            ->sendHttpRequest(
-                'DELETE',
-                "calendars/$calID/events/$eventID?sendUpdates=all",
-                ["Content-Type" => "application/json", 'Authorization' => 'Bearer ' . $credentials]
-            );
-
-        if ($response->getStatus() != Response::HTTP_NO_CONTENT)
-            throw new \Exception($response->getStatusText(), $response->getStatus());
-
-        return $eventID;
     }
 
     public function updateEvent(string $credentials, string $calID, string $eventID, EventCalDAV $event): EventCalDAV
@@ -362,12 +348,32 @@ class Google extends Factory implements OAuthInterface
         return self::parseEvent(json_decode($response->getBodyAsString()));
     }
 
+    public function  deleteEvent(string $credentials, string $calID, string $eventID): string
+    {
+        $response = (new Http($this->srvUrl))
+            ->http()
+            ->sendHttpRequest(
+                'DELETE',
+                "calendars/$calID/events/$eventID?sendUpdates=all",
+                ["Content-Type" => "application/json", 'Authorization' => 'Bearer ' . $credentials]
+            );
+
+        if ($response->getStatus() != Response::HTTP_NO_CONTENT)
+            throw new \Exception($response->getStatusText(), $response->getStatus());
+
+        return $eventID;
+    }
+
+    protected static function toPlateformAttendees(array $attendees): array
+    {
+        return $attendees;
+    }
+
     public static function parseAttendees(array $attendees):array
     {
         return [];
     }
 
-    //*******a mettre dans linterface en protected */
     private static function parseTime(mixed $date): string
     {
         return (is_int($date)) 
@@ -375,8 +381,7 @@ class Google extends Factory implements OAuthInterface
             : (new \DateTime($date))->format('Y-m-d\TH:i:sP');
     }
 
-    //*******a mettre dans linterface en protected */
-    private static function parseEvent($googleEvent): EventCalDAV
+    protected static function parseEvent($googleEvent): EventCalDAV
     {
         // a reecrire plus proprement***************
         $attendees = array_map(function ($n) {
@@ -395,8 +400,7 @@ class Google extends Factory implements OAuthInterface
             ->setUid($googleEvent->id);
     }
 
-    //*******a mettre dans linterface en protected */
-    private static function parseCalendar($googleCalendar, string $calID): CalendarCalDAV
+    protected static function parseCalendar($googleCalendar, string $calID): CalendarCalDAV
     {
         return (new CalendarCalDAV($googleCalendar['displayname']))
             ->setCalendarID($calID)
@@ -406,7 +410,6 @@ class Google extends Factory implements OAuthInterface
             ->setTimeZone($googleCalendar['timeZone']);
     }
 
-    //*******a mettre dans linterface en protected */
     private static function parseCalDAVEvent($icalendarData): array
     {
         $vcalendar = Reader::read($icalendarData);
@@ -429,12 +432,17 @@ class Google extends Factory implements OAuthInterface
         return $results;
     }
 
-    //*******a mettre dans linterface PlateformUserIntereface en protected */
-    private static function parseCredentials(string $credentials): PlateformUserInterface
+    protected static function parseCredentials(string $credentials): PlateformUserInterface
     {
         $tmp = explode(';', $credentials);
 
         return (new GoogleUser())
             ->setToken($tmp[1]);
+    }
+
+    public function setCalenedar(string $calID): self
+    {
+        $this->calendarID = $calID;
+        return $this;
     }
 }

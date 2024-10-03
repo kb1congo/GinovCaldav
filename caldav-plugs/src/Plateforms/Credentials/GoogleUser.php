@@ -3,9 +3,10 @@
 namespace Ginov\CaldavPlugs\Plateforms\Credentials;
 
 use Ginov\CaldavPlugs\PlateformUserInterface;
+use JsonSerializable;
 
 
-class GoogleUser implements PlateformUserInterface
+class GoogleUser implements PlateformUserInterface, JsonSerializable
 {
 
     private string $token;
@@ -25,5 +26,12 @@ class GoogleUser implements PlateformUserInterface
     public function __toString(): string
     {
         return $this->token;
+    }
+
+    public function jsonSerialize(): mixed
+    {
+        return [
+            'token' => $this->token
+        ];
     }
 }
