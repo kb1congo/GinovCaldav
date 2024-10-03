@@ -6,10 +6,11 @@
    - **Technologies** : La bibliothèque a été testée et conçue avec `PHP version 8.1.29` et `Composer version 2.7.7`. L'environnement de test utilise `Symfony 7`.
    - **Installation rapide** : `CalDAV-plugs` est compatible PSR-4, elle s'installe donc aisément grâce à la commande :
 
-   **Exemple :**
    ```bash
    composer require ginov/caldav-plugs
    ```
+
+   Mais étant en phase de developpement nous vous invitons à consulter la section **Guide d'installation** de ce document pour bien configurer l'application
 
 ### 2. **Prérequis**
    - **Environnement minimum requis** : PHP version 8.1.29
@@ -77,6 +78,8 @@ OUTLOOK_SRV_URL=https://graph.microsoft.com/v1.0/
 OUTLOOK_LOGIN_URL=https://login.microsoftonline.com/
 OUTLOOK_OAUTH_CALLBACK_URL=https://oauth2.googleapis.com
 ```
+
+Notez que pour obtenir les paramètres des différentes plateformes, il faut inscrire votre application sur la dite plateforme, puis récupérer, entre autres, le `clientID`, le `secret`, et le `tenant` (dans le cas d'Outlook).
 
 Dans le fichier `services.yaml`, ajoutez les clés qui seront mises à disposition par le `ParameterBag`.
 
