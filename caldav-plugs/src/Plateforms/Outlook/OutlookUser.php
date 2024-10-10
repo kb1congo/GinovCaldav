@@ -1,6 +1,6 @@
 <?php
 
-namespace Ginov\CaldavPlugs\Plateforms\Credentials;
+namespace Ginov\CaldavPlugs\Plateforms\Outlook;
 
 use Ginov\CaldavPlugs\PlateformInterface;
 use Ginov\CaldavPlugs\PlateformUserInterface;
@@ -56,10 +56,20 @@ class OutlookUser implements PlateformUserInterface, JsonSerializable
 
     public function jsonSerialize(): mixed
     {
-        return [
+        return[
+            'token' => $this->token,
             'username' => $this->username,
-            'email' => $this->email,
-            'token' => $this->token
+            'email' => $this->email
         ];
+    }
+    
+    public static function parseCredentials(string $credentials): PlateformUserInterface
+    {
+        $tmp = explode(';', $credentials);
+
+        return (new OutlookUser())
+            ->setToken($tmp[0])
+            ->setUsername($tmp[1])
+            ->setEmail($tmp[2]);
     }
 }

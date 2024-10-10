@@ -7,7 +7,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Ginov\\CaldavPlugs\\": "src/"
+            "Ginov\\CaldavPlugs\\": "src/",
+            "Ginov\\CaldavPlugs\\tests\\": "test/"
         }
     },
     "authors": [

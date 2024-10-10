@@ -5,10 +5,13 @@ namespace Ginov\CaldavPlugs\Plateforms;
 use App\Security\User;
 use Ginov\CaldavPlugs\Dto\CalendarCalDAV;
 use Ginov\CaldavPlugs\Dto\EventCalDAV;
+use Ginov\CaldavPlugs\Dto\Attendee;
 use Ginov\CaldavPlugs\Factory;
-use Ginov\CaldavPlugs\Http;
+use Ginov\CaldavPlugs\PlateformInterface;
+use Ginov\CaldavPlugs\Utils\Http;
 use Ginov\CaldavPlugs\PlateformUserInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Ginov\CaldavPlugs\Plateforms\Credentials\BasicUser;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 
@@ -31,22 +34,30 @@ class Baikal extends Factory
     }
 
     /**
-     * Undocumented function
+     * Singin and get your credentials
      *
      * @param PlateformUserInterface $userDto
      * @return PlateformUserInterface
      */
     public function login(Request $request): PlateformUserInterface
     {
-        /** @var BaikalUser $user */
-        $user = (new BaikalUser())
+        // dd($request->request);
+
+        /** @var BasicUser $user */
+        $user = (new BasicUser())
             ->setUsername($request->request->get('username'))
             ->setPassword($request->request->get('password'));
-        // ->setCalID($request->request->get('cal_name'));
 
         return $user;
     }
 
+    /**
+     * Get one calendar by ID
+     *
+     * @param string $credentials
+     * @param string $calID
+     * @return CalendarCalDAV
+     */
     public function getCalendar(string $credentials, string $calID): CalendarCalDAV
     {
         $user = $this->parseCredentials($credentials);
@@ -124,12 +135,39 @@ class Baikal extends Factory
         return [];
     }
 
+    /**
+     * Get all calendars
+     *
+     * @param string $credentials
+     * @return array
+     */
     public function getCalendars(string $credentials): array
     {
-        $user = $this->parseCredentials($credentials);
+        /* $user = $this->parseCredentials($credentials);
         $response = (new Http($this->srvUrl))
             ->dav(['userName' => $user->getUsername(), 'password' => $user->getPassword()])
-            ->sendDavRequest('PROPFIND', $user->getUsername());
+            ->sendDavRequest('PROPFIND', $user->getUsername()); */
+
+
+        $user = $this->parseCredentials($credentials);
+
+        $xml =<<<XML
+        <?xml version="1.0"?>
+        <d:propfind xmlns:d="DAV:">
+            <d:prop>
+                <d:displayname />
+            </d:prop>
+        </d:propfind>
+        XML;
+
+        $response = (new Http('https://future.zimbra.tech/dav/'))
+            ->dav(['username' => $user->getUsername(), 'password' => $user->getPassword(), 'authType' => 2])
+            ->sendDavRequest(
+                'PROPFIND', 
+                $user->getUsername().'/', 
+                ['Depth' => '1', 'Content-Type' => 'application/xml'], 
+                $xml
+            );
 
         dd($response);
 
@@ -137,6 +175,15 @@ class Baikal extends Factory
         return new CalendarCalDAV($calID);
     }
 
+    /**
+     * Get all events between timeMin and timMax
+     *
+     * @param string $credentials
+     * @param string $calID
+     * @param integer $timeMin
+     * @param integer $timeMax
+     * @return array
+     */
     public function getEvents(string $credentials, string $calID, int $timeMin, int $timeMax): array
     {
         return [];
@@ -268,24 +315,49 @@ class Baikal extends Factory
         return $response;
     }
 
+    protected static function parseAttendees(array $attendees): array
+    {
+        $attendees = [];
+
+        foreach ($attendees as $attendee) {
+            $rsvp = $attendee->status->response == 'none' ? FALSE : TRUE;
+            $attendees[] = new Attendee($attendee->emailAddress->address, $rsvp, $attendee->emailAddress->name);
+        }
+
+        return $attendees;
+    }
+
+    protected static function parseCalendar($plateformCalendar, string $calID): CalendarCalDAV
+    {
+        /** @var CalendarCalDav */
+        $baikalCalendar = $plateformCalendar;
+        return new $baikalCalendar;
+    }
+
+    protected static function parseEvent($plateformEvent): EventCalDAV
+    {
+        return new EventCalDAV();
+    }
+
+    protected static function toPlateformAttendees(array $attendees): array
+    {
+        return [];
+    }
+
     /**
-     * Undocumented function
-     *
      * @param string $credentials
-     * @return BasiCredentials
+     * @return BasicUser
      */
-    private static function parseCredentials(string $credentials): BasiCredentials
+    protected static function parseCredentials(string $credentials): BasicUser
     {
         $tmp = explode(';', $credentials);
 
-        return (new BasiCredentials())
+        return (new BasicUser())
             ->setUsername($tmp[0])
             ->setPassword($tmp[1]);
     }
 
     /**
-     * Undocumented function
-     *
      * @param array $parts
      * @return string
      */
@@ -299,4 +371,9 @@ class Baikal extends Factory
         return $url;
     }
 
+    public function setCalenedar(string $calID): self
+    {
+        $this->calendarID = $calID;
+        return $this;
+    }
 }

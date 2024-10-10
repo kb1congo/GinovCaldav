@@ -1,6 +1,6 @@
 <?php
 
-namespace Ginov\CaldavPlugs\Plateforms;
+namespace Ginov\CaldavPlugs\Plateforms\Bluemind;
 
 use App\HttpTools;
 use Sabre\VObject\Reader;
@@ -14,7 +14,7 @@ use Ginov\CaldavPlugs\PlateformUserInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\sendHttpRequest;
-use Ginov\CaldavPlugs\Plateforms\Credentials\BluemindUser;
+use Ginov\CaldavPlugs\Plateforms\Bluemind\BluemindUser;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 
@@ -82,17 +82,7 @@ class Bluemind extends Factory
 
     public function callback() {}
 
-    public function ___login(PlateformUserInterface $user): PlateformUserInterface
-    {
-        /** @var GoogleUser $user */
-        $user = $user;
-
-        dd($user);
-
-        return $user;
-    }
-
-    public function login(Request $request): PlateformUserInterface
+    public function http_login(Request $request): PlateformUserInterface
     {
         /** @var BluemindUser $user */
         $user = (new BluemindUser())
@@ -119,6 +109,30 @@ class Bluemind extends Factory
             ->setUid($json->authUser->uid)
             ->setDomainUid($json->authUser->domainUid)
             ->setToken($json->authKey);
+    }
+
+    public function login(Request $request): PlateformUserInterface
+    {
+        /** @var BluemindUser $user */
+        $user = (new BluemindUser())
+            ->setUsername($request->request->get('username'))
+            ->setPassword($request->request->get('password'));
+
+        $response = (new Http($this->srvUrl))
+            ->http()
+            ->sendHttpRequest(
+                'POST',
+                'auth/login?login=' . $user->getUsername() . '&origin=' . $this->srvUrl,
+                ['Content-Type' => 'text/plain'],
+                $user->getPassword()
+            );
+
+        if ($response->getStatus() != Response::HTTP_OK)
+            throw new \Exception($response->getStatusText(), $response->getStatus());
+
+        $json = json_decode($response->getBodyAsString());
+        
+        return new BluemindUser();
     }
 
     public function getCalendar(string $credentials, string $calID): CalendarCalDAV
@@ -286,7 +300,7 @@ class Bluemind extends Factory
                 ->setDateEnd($event->start->dateTime)
                 ->setTimeZoneID($event->start->timeZone)
                 ->setRrule($event->recurrence)
-                ->setAttendees($this->parseAttendess($event->attendees))
+                // ->setAttendees($this->parseAttendess($event->attendees))
                 ->setUid($event->id);
         }
 
@@ -392,7 +406,7 @@ class Bluemind extends Factory
             ->setDomainUid($tmp[2]);
     }
 
-    public function setCalenedar(string $calID): self
+    public function setCalendar(string $calID): self
     {
         $this->calendarID = $calID;
         return $this;

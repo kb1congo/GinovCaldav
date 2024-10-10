@@ -41,9 +41,9 @@ class UserProvider implements UserProviderInterface, PasswordUpgraderInterface
             );
 
             return (new User())
-                ->setUsername($tmp->username)
+                /* ->setUsername($tmp->username)
                 ->setPassword($tmp->password)
-                ->setCalCollectionName($tmp->calendar_name)
+                ->setCalCollectionName($tmp->calendar_name) */
                 ->setCredentials($tmp->credentials)
                 ->setApiToken($identifier);
 

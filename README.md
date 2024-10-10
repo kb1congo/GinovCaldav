@@ -16,18 +16,24 @@
    - **Environnement minimum requis** : PHP version 8.1.29
 
 ### 3. **Guide d'installation**
-1. Placez `CalDAV-plugs` dans le même dossier que votre application de test.
+1. (en dev) Placez `CalDAV-plugs` dans le même dossier que votre application de test.
 
 **Structure :**
 ```text
 /mon-dossier
 ├── caldav-plugs/
-│   └── composer.json
-└── MonProjetTest/
+│   ├── Plateforms
+│   │   ├── Google/
+│   │   ├── Outlook/
+│   │   └── Bluemind/
+│   ├── PlateformUserInterface.php
+│   ├── PlateformInterface.php
+│   └── Factory.php
+└── MonProjetTest/  ##api/
     └── composer.json
 ```
 
-2. Dans le `composer.json` de votre application de test, ajoutez les nœuds `repositories` et `"ginov/caldav-plugs": "dev-main"` dans la section `require`.
+2. (en dev) Dans le `composer.json` de votre application de test, ajoutez les nœuds `repositories` et `"ginov/caldav-plugs": "dev-main"` dans la section `require`.
 
 **Exemple :**
 ```json
@@ -38,7 +44,7 @@
     "repositories": [
         {
             "type": "path",
-            "url": "../caldav-plugs"
+            "url": "../../calDAV/caldav-plugs"
         }
     ],
     "autoload": {
@@ -61,6 +67,7 @@ Dans le fichier `.env` de votre application de test, ajoutez les constantes suiv
 
 **Exemple pour Google et Outlook** :
 ```text
+###> Google keys ###
 GOOGLE_CLIENT_ID=idclient
 GOOGLE_CLIENT_SECRET=secret
 GOOGLE_SCOPE=https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events
@@ -68,7 +75,9 @@ GOOGLE_REDIRECT_URI=oauth2callback_uri
 GOOGLE_SRV_URL=https://www.googleapis.com/calendar/v3/
 GOOGLE_CALDAV_URL=https://apidata.googleusercontent.com/caldav/v2/
 GOOGLE_OAUTH_CALLBACK_URL=https://oauth2.googleapis.com
+###< Google keys ###
 
+###> Outlook keys ###
 OUTLOOK_CLIENT_ID=idclient
 OUTLOOK_CLIENT_SECRET=secret
 OUTLOOK_CLIENT_TENANT=tenant
@@ -77,14 +86,15 @@ OUTLOOK_REDIRECT_URI=oauth2callback_uri
 OUTLOOK_SRV_URL=https://graph.microsoft.com/v1.0/
 OUTLOOK_LOGIN_URL=https://login.microsoftonline.com/
 OUTLOOK_OAUTH_CALLBACK_URL=https://oauth2.googleapis.com
+###< Outlook keys ###
 ```
-
-Notez que pour obtenir les paramètres des différentes plateformes, il faut inscrire votre application sur la dite plateforme, puis récupérer, entre autres, le `clientID`, le `secret`, et le `tenant` (dans le cas d'Outlook).
+**NB**: Pour obtenir les paramètres des différentes plateformes, il faut inscrire votre application sur la dite plateforme, puis récupérer, entre autres, le `clientID`, le `secret`, et le `tenant` (dans le cas d'Outlook).
 
 Dans le fichier `services.yaml`, ajoutez les clés qui seront mises à disposition par le `ParameterBag`.
 
 **Exemple pour Google et Outlook** :
 ```yaml
+#Google
 google.client.id: "%env(GOOGLE_CLIENT_ID)%"
 google.client.secret: "%env(GOOGLE_CLIENT_SECRET)%"
 google.scope: "%env(GOOGLE_SCOPE)%"
@@ -93,6 +103,7 @@ google.srv.url: "%env(GOOGLE_SRV_URL)%"
 google.caldav.url: "%env(GOOGLE_CALDAV_URL)%"
 google.oauth.callback.url: "%env(GOOGLE_OAUTH_CALLBACK_URL)%"
 
+#Outlook
 outlook.client.id: "%env(OUTLOOK_CLIENT_ID)%"
 outlook.client.secret: "%env(OUTLOOK_CLIENT_SECRET)%"
 outlook.client.tenant: "%env(OUTLOOK_CLIENT_TENANT)%"
@@ -114,10 +125,12 @@ require __DIR__ . '/vendor/autoload.php';
 use Ginov\CaldavPlugs\Plateforms\Google;
 
 $objet = new Google();
-echo $objet->getOAuthUrl();
+
+// Afficher l'url oAuth 2.0 code de google
+echo $plateformInstance->getOAuthUrl();
 ```
 
-**Exemple avec la factory** :
+**Exemple précédent avec la factory** :
 ```php
 <?php
 
@@ -125,25 +138,19 @@ require __DIR__ . '/vendor/autoload.php';
 
 use Ginov\CaldavPlugs\Plateforms\Google;
 use Ginov\CaldavPlugs\Factory;
+use Ginov\CaldavPlugs\OAuthInterface;
 
+$plateform = "google";
+
+// Instancier une plateforme en fonction de la string $plateform
 /** @var OAuthInterface */
-$plateformInstance = Factory::create($plateform, $this->params);
+$plateformInstance = Factory::create($plateform, $this->parameterBag);
 
+// Afficher l'url oAuth 2.0 code de google
 echo $plateformInstance->getOAuthUrl();
 ```
 
-### 4. **Démarrage rapide**
-   - **Premier exemple** : Exemple basique de création d’un calendrier ou d’un événement.
-   - **Exemple de code simple** :
-     ```php
-     use MyCompany\CalDAV\Client;
-     
-     $client = new Client($baseUri, $username, $password);
-     $client->createCalendar($calendarName);
-     ```
-   - **Autres cas d'utilisation** : Ajout d'un événement, récupération d'un calendrier, suppression, etc.
-
-### 5. **Architecture de la bibliothèque**
+### 4. **Architecture de la bibliothèque**
 
 1. **Classes principales** : 
    - `Ginov\CaldavPlugs\PlateformInterface` : Interface qui présente les méthodes pour manipuler un agenda.
@@ -158,7 +165,7 @@ echo $plateformInstance->getOAuthUrl();
    ![Diagram](https://www.mermaidchart.com/raw/970c9c6f-c463-4ee4-84aa-f12515b9e5c3?theme=light&version=v0.1&format=svg)
 
 
-### 6. **Utilisation détaillée**
+### 5. **Utilisation détaillée**
 
 1. **Authentification** :  
    Google et Facebook utilisent OAuth 2.0 comme système d'authentification.
@@ -166,19 +173,19 @@ echo $plateformInstance->getOAuthUrl();
 
    Lorsqu'on utilise la `Factory`, voici les étapes :
 
-   a. Le front émet une requête vers le middleware sous la forme `/code/{plateform_name}` pour récupérer l'URL OAuth.  
-   f. Le front envoie une requête vers l'URL OAuth, ce qui déclenche l'appel de l'URL de callback préalablement enregistrée sur le serveur, par exemple `localhost:8000/callback.php`. L'`ApiToken` et le `RefreshToken` s'affichent côté front en réponse à la requête émise.  
-   l. Le front doit sauvegarder le `RefreshToken` en cas d'expiration de l'`ApiToken`.  
-   m. Le front peut alors s'authentifier sur le middleware. Ce dernier appelle la méthode `login(Request $request):PlateformUserInterface`. La méthode `login()` renvoie les identifiants à utiliser pour les requêtes suivantes. Une fois connecté, les identifiants retournés par la méthode `login()` sont disponibles soit en session, soit dans un token JWT ou toute autre méthode de gestion de session.
+   (1). Le front émet une requête vers le middleware sous la forme `/code/{plateform_name}` pour récupérer l'URL OAuth.  
+   (6). Le front envoie une requête vers l'URL OAuth, ce qui déclenche l'appel de l'URL de callback préalablement enregistrée sur le serveur, par exemple `localhost:8000/callback.php`. L'`ApiToken` et le `RefreshToken` s'affichent côté front en réponse à la requête émise.  
+   (12). Le front doit sauvegarder le `RefreshToken` en cas d'expiration de l'`ApiToken`.  
+   (13). Le front peut alors s'authentifier sur le middleware. Ce dernier appelle la méthode `login(Request $request):PlateformUserInterface`. La méthode `login()` renvoie les identifiants à utiliser pour les requêtes suivantes. Une fois connecté, les identifiants retournés par la méthode `login()` sont disponibles soit en session, soit dans un token JWT ou toute autre méthode de gestion de session.
 
    **Exemple**: Pour plus de détails, voir le projet dans `/api/Controller/AuthController`.
 
-   a. Obtenir l'URL OAuth pour le code :
+   (1) Obtenir l'URL OAuth pour le code :
    ```php
     /*
      * Obtenir l'URL OAuth pour le code 
      * 
-     * GET localhost:8000/code/{plateform_name}
+     * GET /code/{plateform_name}
      * Request header: none
      * Request body: none
      * Response: string */
@@ -194,7 +201,7 @@ echo $plateformInstance->getOAuthUrl();
     //...
    ```
 
-   f. Obtenir l'`ApiToken` + `RefreshToken` sur la route GET `localhost:8000/{plateform}/callback.php` enregistrée sur la plateforme. Dans le fichier `callback.php` :
+   (6) Obtenir l'`ApiToken` + `RefreshToken` sur la route GET `localhost:8000/{plateform}/callback.php` enregistrée sur la plateforme. Dans le fichier `callback.php` :
    ```php
     /* Obtenir l'ApiToken + RefreshToken */
 
@@ -209,12 +216,12 @@ echo $plateformInstance->getOAuthUrl();
     //...
    ```
 
-   m. Authentification :
+   (13) Authentification :
    ```php
     /*
      * Se connecter pour obtenir les identifiants 
      * 
-     * POST localhost:8000/{plateform}/login
+     * POST /{plateform}/login
      * Request header: none
      * Request body: 
      *  + token: string (le token API Google ou Outlook)
@@ -242,21 +249,23 @@ echo $plateformInstance->getOAuthUrl();
 
    Lorsqu'on utilise la `Factory`, voici les étapes :
 
-   a. Une fois authentifié, le front émet une requête vers le middleware sous la forme `/{plateform}/calendars` pour récupérer la liste des agendas.  
-   b. Le middleware extrait les identifiants et appelle la méthode `getCalendars(credentials):CalendarCalDAV[]` du connecteur.  
-   c. La liste des calendriers est envoyée au front.
+   (1) Une fois authentifié, le front émet une requête vers le middleware sous la forme `/{plateform}/calendars` pour récupérer la liste des agendas.  
+   (2) Le middleware extrait les identifiants et appelle la méthode `getCalendars(credentials):CalendarCalDAV[]` du connecteur.  
+   (3) La liste des calendriers est envoyée au front.
 
    **Exemple** :
    ```php
     /*
      * Récupérer tous les calendriers 
      * 
-     * GET localhost:8000/calendars
+     * GET /calendars
      * Request header: none
      * Request body: none
      * Response: CalendarCalDAV[] */
 
     //...
+
+    // L'utilisateur est authentifié
 
     $plateformInstance = Factory::create($plateform, $this->parametersBag);
     
@@ -275,12 +284,14 @@ echo $plateformInstance->getOAuthUrl();
     /*
      * Récupérer un calendrier
      * 
-     * GET localhost:8000/{plateform}/calendar/{calendar_id}
+     * GET /{plateform}/calendar/{calendar_id}
      * Request header: none
      * Request body: none
      * Response: CalendarCalDAV */
 
     //...
+
+    // L'utilisateur est authentifié
 
     $plateformInstance = Factory::create($plateform, $this->parametersBag);
     
@@ -298,7 +309,7 @@ echo $plateformInstance->getOAuthUrl();
     /*
      * Créer un calendrier
      * 
-     * POST localhost:8000/{plateform}/calendar
+     * POST /{plateform}/calendar
      * Request header: none
      * Request body: formData 
      *  + displayname: string (obligatoire)
@@ -307,6 +318,8 @@ echo $plateformInstance->getOAuthUrl();
      * Response: status 201; CalendarCalDAV */
 
     //...
+
+    // L'utilisateur est authentifié
 
     $plateformInstance = Factory::create($plateform, $this->parametersBag);
     
@@ -326,7 +339,7 @@ echo $plateformInstance->getOAuthUrl();
     /*
      * Modifier un calendrier
      * 
-     * PUT localhost:8000/{plateform}/calendar/{calendar_id}
+     * PUT /{plateform}/calendar/{calendar_id}
      * Request header: none
      * Request body: formData 
      *  + displayname: string (obligatoire)
@@ -335,6 +348,8 @@ echo $plateformInstance->getOAuthUrl();
      * Response: status 200; CalendarCalDAV */
 
     //...
+
+    // L'utilisateur est authentifié
 
     $plateformInstance = Factory::create($plateform, $this->parametersBag);
     
@@ -355,12 +370,14 @@ echo $plateformInstance->getOAuthUrl();
     /*
      * Supprimer un calendrier
      * 
-     * DELETE localhost:8000/{plateform}/calendar/{calendar_id}
+     * DELETE /{plateform}/calendar/{calendar_id}
      * Request header: none
      * Request body: none
      * Response: status 200; string calendar_id */
 
     //...
+
+    // L'utilisateur est authentifié
 
     $plateformInstance = Factory::create($plateform, $this->parametersBag);
     
@@ -378,21 +395,23 @@ echo $plateformInstance->getOAuthUrl();
 
    Lorsqu'on utilise la `Factory`, voici les étapes :
 
-   a. Une fois authentifié, le front émet une requête vers le middleware sous la forme `/{plateform}/events/{calID}/{time_max}/{time_min}` pour récupérer la liste des événements tels que `dateEnd < time_max AND dateStart > time_min AND time_max > time_min > 0` (time_min et time_max étant des timestamps).  
-   b. Le middleware extrait les identifiants et appelle la méthode `getEvents(credentials, calendar_id, time_min, time_max):EventCalDAV[]` du connecteur.  
-   c. La liste des événements est envoyée au front.
+   (1) Une fois authentifié, le front émet une requête vers le middleware sous la forme `/{plateform}/events/{calID}/{time_max}/{time_min}` pour récupérer la liste des événements tels que `dateEnd < time_max AND dateStart > time_min AND time_max > time_min > 0` (time_min et time_max étant des timestamps).  
+   (3) Le middleware extrait les identifiants et appelle la méthode `getEvents(credentials, calendar_id, time_min, time_max):EventCalDAV[]` du connecteur.  
+   (8) La liste des événements est envoyée au front.
 
    **Exemple** :
    ```php
     /*
      * Récupérer tous les événements
      * 
-     * GET localhost:8000/{plateform}/events/{calID}/{time_max}/{time_min}
+     * GET /{plateform}/events/{calID}/{time_max}/{time_min}
      * Request header: none
      * Request body: none
      * Response: EventCalDAV[] */
 
     //...
+
+    // L'utilisateur est authentifié
 
     $plateformInstance = Factory::create($plateform, $this->parametersBag);
     
@@ -410,7 +429,7 @@ echo $plateformInstance->getOAuthUrl();
     /*
      * Créer un événement
      * 
-     * POST localhost:8000/{plateform}/event/{calID}
+     * POST /{plateform}/event/{calID}
      * Request header: none
      * Request body: formData 
      *  + summary: string
@@ -423,6 +442,8 @@ echo $plateformInstance->getOAuthUrl();
      * Response: status 201; EventCalDAV */
 
     //...
+
+    // L'utilisateur est authentifié
 
     $plateformInstance = Factory::create($plateform, $this->parametersBag);
     
@@ -446,7 +467,7 @@ echo $plateformInstance->getOAuthUrl();
     /*
      * Modifier un événement
      * 
-     * PUT localhost:8000/{plateform}/calendars/{calendar_id}/events/{event_id}
+     * PUT /{plateform}/calendars/{calendar_id}/events/{event_id}
      * Request header: none
      * Request body: formData 
      *  + summary: string
@@ -459,6 +480,8 @@ echo $plateformInstance->getOAuthUrl();
      * Response: status 200; EventCalDAV */
 
     //...
+
+    // L'utilisateur est authentifié
 
     $plateformInstance = Factory::create($plateform, $this->parametersBag);
     
@@ -482,12 +505,14 @@ echo $plateformInstance->getOAuthUrl();
     /*
      * Supprimer un événement
      * 
-     * DELETE localhost:8000/{plateform}/event/{calID}/{eventID}
+     * DELETE /{plateform}/event/{calID}/{eventID}
      * Request header: none
      * Request body: none
      * Response: status 204; string eventID */
 
     //...
+
+    // L'utilisateur est authentifié
 
     $plateformInstance = Factory::create($plateform, $this->parametersBag);
     

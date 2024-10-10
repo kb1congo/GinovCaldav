@@ -368,13 +368,14 @@ class EventCalDAV
         return $result;
     }
 
-    public static function formatDate(string $mDate)
+    public static function formatDate(string $mDate, $timeZoneID = self::DEFAULT_TIME_ZONE)
     {
 
         $date = new DateTime($mDate);
 
-        // Convertir l'heure en UTC (si nécessaire)
-        $date->setTimezone(new DateTimeZone('UTC'));
+        // Convertir l'heure en UTC
+        // $date->setTimezone(new DateTimeZone('UTC'));
+        $date->setTimezone(new DateTimeZone($timeZoneID));
 
         // Formater la date et l'heure au format iCalendar (ISO 8601)
         $formattedDate = $date->format('Ymd\THis\Z');

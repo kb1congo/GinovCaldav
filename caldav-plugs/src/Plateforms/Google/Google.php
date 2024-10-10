@@ -1,6 +1,6 @@
 <?php
 
-namespace Ginov\CaldavPlugs\Plateforms;
+namespace Ginov\CaldavPlugs\Plateforms\Google;
 
 use App\HttpTools;
 use DateTime;
@@ -16,7 +16,7 @@ use Ginov\CaldavPlugs\PlateformUserInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\sendHttpRequest;
-use Ginov\CaldavPlugs\Plateforms\Credentials\GoogleUser;
+use Ginov\CaldavPlugs\Plateforms\Google\GoogleUser;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 
@@ -39,7 +39,6 @@ class Google extends Factory implements OAuthInterface
         $this->secret = $parameters->get('google.client.secret');
         $this->redirectUri = $parameters->get('google.redirect.uri');
         $this->scope = $parameters->get('google.scope');
-
     }
 
     public function getOAuthUrl(): string
@@ -238,7 +237,7 @@ class Google extends Factory implements OAuthInterface
             ->http()
             ->sendHttpRequest(
                 'GET',
-                "calendars/$calID/events?".http_build_query($params),
+                "calendars/$calID/events?" . http_build_query($params),
                 ["Content-Type" => "application/json", 'Authorization' => 'Bearer ' . $credentials]
             );
 
@@ -252,16 +251,6 @@ class Google extends Factory implements OAuthInterface
         foreach ($json->items as $event) {
 
             $items[] = self::parseEvent($event);
-
-            /* $items[] = (new EventCalDAV())
-                ->setSummary($event->summary ?? '')
-                ->setDescription($event->description ?? '')
-                ->setLocation($event->location ?? '')
-                ->setDateStart($event->start->dateTime)
-                ->setDateEnd($event->end->dateTime)
-                ->setTimeZoneID($event->start->timeZone)
-                ->setRrule($event->recurrence[0] ?? null) // a vérifier****************
-                ->setUid($event->id); */
         }
 
         return [
@@ -288,6 +277,24 @@ class Google extends Factory implements OAuthInterface
 
     public function createEvent(string $credentials, string $calID, EventCalDAV $event): EventCalDAV
     {
+        dd(
+            [
+                'summary' => $event->getSummary(),
+                'description' => $event->getDescription() ? $event->getDescription() : $event->getSummary(),
+                'start' => [
+                    'dateTime' => self::parseTime($event->getDateStart()),
+                    'timeZone' => $event->getTimeZoneID(),
+                ],
+                'end' => [
+                    'dateTime' => self::parseTime($event->getDateEnd()),
+                    'timeZone' => $event->getTimeZoneID(),
+                ],
+                'attendees' => self::toPlateformAttendees($event->getAttendees()),
+                "sendUpdates" => "all",
+                // "sendNotifications" => true
+            ]
+        );
+
         $response = (new Http($this->srvUrl))
             ->http()
             ->sendHttpRequest(
@@ -307,7 +314,8 @@ class Google extends Factory implements OAuthInterface
                             'timeZone' => $event->getTimeZoneID(),
                         ],
                         'attendees' => self::toPlateformAttendees($event->getAttendees()),
-                        "sendUpdates" => "all"
+                        "sendUpdates" => "all",
+                        "sendNotifications" => true
                     ]
                 ))
             );
@@ -366,18 +374,26 @@ class Google extends Factory implements OAuthInterface
 
     protected static function toPlateformAttendees(array $attendees): array
     {
-        return $attendees;
+        $results = array_map(function ($n) {
+            return [
+                'email' => $n->getEmail(),
+                'displayName' => $n->getName(),
+                // 'responseStatus' => $n->getRvps() ? 'accepted' : 'needsAction'
+            ];
+        }, $attendees);
+
+        return $results;
     }
 
-    public static function parseAttendees(array $attendees):array
+    public static function parseAttendees(array $attendees): array
     {
         return [];
     }
 
     private static function parseTime(mixed $date): string
     {
-        return (is_int($date)) 
-            ? date('Y-m-d\TH:i:sP', $date) 
+        return (is_int($date))
+            ? date('Y-m-d\TH:i:sP', $date)
             : (new \DateTime($date))->format('Y-m-d\TH:i:sP');
     }
 
@@ -410,37 +426,7 @@ class Google extends Factory implements OAuthInterface
             ->setTimeZone($googleCalendar['timeZone']);
     }
 
-    private static function parseCalDAVEvent($icalendarData): array
-    {
-        $vcalendar = Reader::read($icalendarData);
-
-        $results = [];
-
-        foreach ($vcalendar->VEVENT as $event) {
-
-            $results[] = (new EventCalDAV())
-                ->setSummary($event->SUMMARY)
-                ->setDescription($event->DESCRIPTION)
-                ->setLocation($event->LOCATION)
-                ->setDateStart($event->DTSTART)
-                ->setDateEnd($event->DTEND)
-                ->setTimeZoneID($vcalendar->VTIMEZONE->TZID)
-                ->setRrule($event->RRULE)
-                ->setUid($event->UID);
-        }
-
-        return $results;
-    }
-
-    protected static function parseCredentials(string $credentials): PlateformUserInterface
-    {
-        $tmp = explode(';', $credentials);
-
-        return (new GoogleUser())
-            ->setToken($tmp[1]);
-    }
-
-    public function setCalenedar(string $calID): self
+    public function setCalendar(string $calID): self
     {
         $this->calendarID = $calID;
         return $this;

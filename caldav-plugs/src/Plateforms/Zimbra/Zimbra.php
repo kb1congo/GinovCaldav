@@ -1,9 +1,11 @@
 <?php
 
-namespace Ginov\CaldavPlugs\Plateforms;
+namespace Ginov\CaldavPlugs\Plateforms\Zimbra;
 
+use Ginov\CaldavPlugs\Plateforms\Baikal;
 use Ginov\CaldavPlugs\PlateformUserInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Ginov\CaldavPlugs\Plateforms\Credentials\BasicUser;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class ZimbraTokenUser implements PlateformUserInterface
@@ -26,6 +28,19 @@ class ZimbraTokenUser implements PlateformUserInterface
    public function __toString(): string
    {
       return $this->token . ';' . $this->calID;
+   }
+
+   /**
+    * Undocumented function
+    *
+    * @param string $credentials
+    * @return ZimbraUser
+    */
+   public static function parseCredentials(string $credentials): PlateformUserInterface
+   {
+      $tmp = explode(';', $credentials);
+
+      return new ZimbraTokenUser();
    }
 
    /**
@@ -154,6 +169,28 @@ class ZimbraUser implements PlateformUserInterface
    {
       return $this->username . ';' . $this->password . ';' . $this->calID;
    }
+
+   /**
+    * Undocumented function
+    *
+    * @param string $credentials
+    * @return ZimbraUser
+    */
+   public static function parseCredentials(string $credentials): PlateformUserInterface
+   {
+      $tmp = explode(';', $credentials);
+
+      return new BasicUser();
+
+      return (\count($tmp) == 3)
+         ? (new ZimbraUser())
+         ->setUsername($tmp[0])
+         ->setPassword($tmp[1])
+         ->setCalID($tmp[2])
+         : (new ZimbraTokenUser())
+         ->setCalID($tmp[0])
+         ->setToken($tmp[1]);
+   }
 }
 
 class Zimbra extends Baikal
@@ -164,14 +201,10 @@ class Zimbra extends Baikal
       $this->srvUrl = $parameter->get('baikal.srv.url');
    }
 
-   /* public function getOAuthUrl():string{
-      return '';
-   }
-
-   public function getToken(Request $request): string
+   /* public function login(Request $request): PlateformUserInterface
    {
-       return '';
-   }  */  
+      return new ZimbraUser();
+   } */
 
    /**
     * Undocumented function
@@ -194,26 +227,6 @@ class Zimbra extends Baikal
    /**
     * Undocumented function
     *
-    * @param string $credentials
-    * @return ZimbraUser
-    */
-   private static function parseCredentials(string $credentials): ZimbraUser
-   {
-      $tmp = explode(';', $credentials);
-
-      return (\count($tmp) == 3)
-         ? (new ZimbraUser())
-            ->setUsername($tmp[0])
-            ->setPassword($tmp[1])
-            ->setCalID($tmp[2])
-         : (new ZimbraTokenUser())
-            ->setCalID($tmp[0])
-            ->setToken($tmp[1]);
-   }
-
-   /**
-    * Undocumented function
-    *
     * @param array $parts
     * @return string
     */
@@ -225,5 +238,11 @@ class Zimbra extends Baikal
       }
 
       return $url;
+   }
+
+   public function setCalendar(string $calID): self
+   {
+      $this->calendarID = $calID;
+      return $this;
    }
 }

@@ -26,26 +26,11 @@ use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class CalendarController extends AbstractController
 {
-    private ParameterBagInterface $params;
+    private ParameterBagInterface $parameterBag;
 
-    public function __construct(ParameterBagInterface $params)
+    public function __construct(ParameterBagInterface $parameterBag)
     {
-        $this->params = $params;
-    }
-
-    #[IsGranted('ROLE_USER', message: 'Acces denied', statusCode: Response::HTTP_UNAUTHORIZED)]
-    #[Route('/{plateform}/calendar/{calendar_id}', name: 'api_calendar', methods: ['GET'])]
-    public function getCalendar(string $plateform, string $calendar_id): JsonResponse
-    {
-        /** @var \App\Security\User */
-        $user = $this->getUser();
-
-        $plateformInstance = Factory::create($plateform, $this->params);
-
-        return $this->json([
-            'token' => 'token',
-            'calendars' => $plateformInstance->getCalendar($user->getCredentials(), $calendar_id)
-        ], Response::HTTP_OK);
+        $this->parameterBag = $parameterBag;
     }
 
     #[IsGranted('ROLE_USER', message: 'Acces denied', statusCode: Response::HTTP_UNAUTHORIZED)]
@@ -55,11 +40,26 @@ class CalendarController extends AbstractController
         /** @var \App\Security\User */
         $user = $this->getUser();
 
-        $plateformInstance = Factory::create($plateform, $this->params);
+        $plateformInstance = Factory::create($plateform, $this->parameterBag);
 
         return $this->json([
             'token' => 'token',
             'calendars' => $plateformInstance->getCalendars($user->getCredentials())
+        ], Response::HTTP_OK);
+    }
+
+    #[IsGranted('ROLE_USER', message: 'Acces denied', statusCode: Response::HTTP_UNAUTHORIZED)]
+    #[Route('/{plateform}/calendar/{calendar_id}', name: 'api_calendar', methods: ['GET'])]
+    public function getCalendar(string $plateform, string $calendar_id): JsonResponse
+    {
+        /** @var \App\Security\User */
+        $user = $this->getUser();
+
+        $plateformInstance = Factory::create($plateform, $this->parameterBag);
+
+        return $this->json([
+            'token' => 'token',
+            'calendars' => $plateformInstance->getCalendar($user->getCredentials(), $calendar_id)
         ], Response::HTTP_OK);
     }
 
@@ -70,7 +70,7 @@ class CalendarController extends AbstractController
         /** @var \App\Security\User */
         $user = $this->getUser();
 
-        $plateformInstance = Factory::create($plateform, $this->params);
+        $plateformInstance = Factory::create($plateform, $this->parameterBag);
 
         return $this->json([
             'token' => 'token',
@@ -85,7 +85,7 @@ class CalendarController extends AbstractController
         /** @var \App\Security\User */
         $user = $this->getUser();
 
-        $plateformInstance = Factory::create($plateform, $this->params);
+        $plateformInstance = Factory::create($plateform, $this->parameterBag);
 
         return $this->json([
             'token' => 'token',
@@ -100,7 +100,7 @@ class CalendarController extends AbstractController
         /** @var \App\Security\User */
         $user = $this->getUser();
 
-        $plateformInstance = Factory::create($plateform, $this->params);
+        $plateformInstance = Factory::create($plateform, $this->parameterBag);
 
         return $this->json([
             'token' => 'token',

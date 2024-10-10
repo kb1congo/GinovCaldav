@@ -7,7 +7,7 @@ use JsonSerializable;
 
 
 
-class BasicUser implements PlateformUserInterface, JsonSerializable
+class BasicUser implements PlateformUserInterface
 {
     private string $username;
     private string $password;
@@ -66,11 +66,10 @@ class BasicUser implements PlateformUserInterface, JsonSerializable
         return $this->username.';'.$this->password;
     }
 
-    public function jsonSerialize(): mixed
+    public static function parseCredentials(string $credentials): PlateformUserInterface
     {
-        return [
-            'username' => $this->username,
-            'password' => $this->password
-        ];
+        $tmp = explode(';', $credentials);
+
+        return (new BasicUser());
     }
 }

@@ -31,14 +31,14 @@ class Http
      *
      * @param array $davSettings Array containing the DAV server settings.
      */
-    public function __construct(string $baseUrl, array $davSettings = [])
+    public function __construct(string $baseUrl)
     {
         $this->httpClient = null;
         $this->davClient = null;
 
         $this->baseUrl = $baseUrl;
 
-        $this->isDav = !!$davSettings;
+        // $this->isDav = !!$davSettings;
     }
 
     /**
@@ -63,9 +63,9 @@ class Http
      */
     public function dav(array $davSettings): self
     {
+        $this->isDav = true;
+
         $davSettings['baseUri'] = $this->baseUrl;
-        // array_unshift($davSettings, $this->baseUrl);
-        // dd($davSettings);
 
         $this->davClient = new DavClient($davSettings);
 
@@ -82,10 +82,14 @@ class Http
      */
     public function verify(string $caPath): self
     {
-        if (!$this->isDav)
-            $this->httpClient->addCurlSetting(CURLOPT_CAINFO, $caPath);
-        else
-            $this->davClient->addCurlSetting(CURLOPT_CAINFO, $caPath);
+        if (!$this->isDav && $this->httpClient)
+            $this->httpClient
+                ->addCurlSetting(CURLOPT_CAINFO, $caPath);
+        elseif($this->isDav && $this->davClient)
+            $this->davClient
+                ->addCurlSetting(CURLOPT_CAINFO, $caPath);
+    
+        else throw new \Exception('client error');
 
         return $this;
     }
@@ -135,13 +139,18 @@ class Http
 
     private function notVerify(): self
     {
-        if (!$this->isDav) {
-            $this->httpClient->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
-            $this->httpClient->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
-        } else {
-            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
-            $this->davClient->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
+        if (!$this->isDav && $this->httpClient) {
+            $this->httpClient
+                ->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
+            $this->httpClient
+                ->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
+        } elseif($this->isDav && $this->davClient) {
+            $this->davClient
+                ->addCurlSetting(CURLOPT_SSL_VERIFYHOST, 0);
+            $this->davClient
+                ->addCurlSetting(CURLOPT_SSL_VERIFYPEER, 0);
         }
+        else throw new \Exception('client error');
 
         return $this;
     }

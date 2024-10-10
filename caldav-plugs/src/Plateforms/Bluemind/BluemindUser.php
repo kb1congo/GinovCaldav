@@ -1,11 +1,11 @@
 <?php
 
-namespace Ginov\CaldavPlugs\Plateforms\Credentials;
+namespace Ginov\CaldavPlugs\Plateforms\Bluemind;
 
 use Ginov\CaldavPlugs\PlateformUserInterface;
 use JsonSerializable;
 
-class BluemindUser implements PlateformUserInterface, JsonSerializable
+class BluemindUser implements PlateformUserInterface
 {
     private string $uid;
     
@@ -13,9 +13,9 @@ class BluemindUser implements PlateformUserInterface, JsonSerializable
 
     private string $token;
 
-    /* private string $username;
+    private string $username;
 
-    private string $password; */
+    private string $password;
 
     public function getUid():string
     {
@@ -51,7 +51,7 @@ class BluemindUser implements PlateformUserInterface, JsonSerializable
         return $this->token;
     }
 
-    /* public function getUsername(): string
+    public function getUsername(): string
     {
         return $this->username;
     }
@@ -71,18 +71,18 @@ class BluemindUser implements PlateformUserInterface, JsonSerializable
     {
         $this->password = $password;
         return $this;
-    } */
+    }
 
     public function __toString(): string
     {
         return $this->token . ';' . $this->uid . ';' . $this->domainUid;
     }
 
-    public function jsonSerialize(): mixed
+    public static function parseCredentials(string $credentials): PlateformUserInterface
     {
-        return [
-            'username' => $this->username,
-            'password' => $this->password
-        ];
+        $tmp = explode(';', $credentials);
+
+        return (new BluemindUser())
+            ->setToken($tmp[1]);
     }
 }

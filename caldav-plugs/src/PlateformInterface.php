@@ -117,6 +117,6 @@ interface PlateformInterface
      *  @param string $calID
      *  @return PlateformInterface
      */
-    public function setCalenedar(string $calID): PlateformInterface;
+    public function setCalendar(string $calID): PlateformInterface;
 
 }

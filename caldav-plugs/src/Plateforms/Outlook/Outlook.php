@@ -1,6 +1,6 @@
 <?php
 
-namespace Ginov\CaldavPlugs\Plateforms;
+namespace Ginov\CaldavPlugs\Plateforms\Outlook;
 
 use App\HttpTools;
 use Sabre\VObject\Reader;
@@ -16,7 +16,7 @@ use Ginov\CaldavPlugs\PlateformUserInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\sendHttpRequest;
-use Ginov\CaldavPlugs\Plateforms\Credentials\OutlookUser;
+use Ginov\CaldavPlugs\Plateforms\Outlook\OutlookUser;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 
@@ -118,7 +118,7 @@ class Outlook extends Factory implements OAuthInterface
     public function getCalendar(string $credentials, string $calID): CalendarCalDAV
     {
         /** @var OutlookUser */
-        $user = $this->parseCredentials($credentials);
+        $user = OutlookUser::parseCredentials($credentials);
 
         $response = (new Http($this->srvUrl))
             ->http()
@@ -145,7 +145,7 @@ class Outlook extends Factory implements OAuthInterface
     public function getCalendars(string $credentials): array
     {
         /** @var OutlookUser */
-        $user = $this->parseCredentials($credentials);
+        $user = OutlookUser::parseCredentials($credentials);
 
         $response = (new Http($this->srvUrl))
             ->http()
@@ -180,7 +180,7 @@ class Outlook extends Factory implements OAuthInterface
     public function createCalendar(string $credentials, CalendarCalDAV $calendar): CalendarCalDAV
     {
         /** @var OutlookUser */
-        $user = $this->parseCredentials($credentials);
+        $user = OutlookUser::parseCredentials($credentials);
 
         $response = (new Http($this->srvUrl))
             ->http()
@@ -226,7 +226,7 @@ class Outlook extends Factory implements OAuthInterface
     public function updateCalendar(string $credentials, CalendarCalDAV $calendar): CalendarCalDAV
     {
         /** @var OutlookUser */
-        $user = $this->parseCredentials($credentials);
+        $user = OutlookUser::parseCredentials($credentials);
 
         $response = (new Http($this->srvUrl))
             ->http()
@@ -253,7 +253,7 @@ class Outlook extends Factory implements OAuthInterface
     public function deleteCalendar(string $credentials, string $calID)
     {
         /** @var OutlookUser */
-        $user = $this->parseCredentials($credentials);
+        $user = OutlookUser::parseCredentials($credentials);
 
         $response = (new Http($this->srvUrl))
             ->http()
@@ -279,7 +279,7 @@ class Outlook extends Factory implements OAuthInterface
         if ($timeMax) $params['endDateTime'] = date('Y-m-d\TH:i:sP', $timeMax);
 
         /** @var OutlookUser */
-        $user = $this->parseCredentials($credentials);
+        $user = OutlookUser::parseCredentials($credentials);
 
         $response = (new Http($this->srvUrl))
             ->http()
@@ -308,7 +308,7 @@ class Outlook extends Factory implements OAuthInterface
     public function getEvent(string $credentials, string $calID, string $eventID): EventCalDAV
     {
         /** @var OutlookUser */
-        $user = $this->parseCredentials($credentials);
+        $user = OutlookUser::parseCredentials($credentials);
 
         $response = (new Http($this->srvUrl))
             ->http()
@@ -327,7 +327,7 @@ class Outlook extends Factory implements OAuthInterface
     public function createEvent(string $credentials, string $calID, EventCalDAV $event): EventCalDAV
     {
         /** @var OutlookUser */
-        $user = $this->parseCredentials($credentials);
+        $user = OutlookUser::parseCredentials($credentials);
 
         $response = (new Http($this->srvUrl))
             ->http()
@@ -361,7 +361,7 @@ class Outlook extends Factory implements OAuthInterface
     public function deleteEvent(string $credentials, string $calID, string $eventID): string
     {
         /** @var OutlookUser */
-        $user = $this->parseCredentials($credentials);
+        $user = OutlookUser::parseCredentials($credentials);
 
         $response = (new Http($this->srvUrl))
             ->http()
@@ -380,7 +380,7 @@ class Outlook extends Factory implements OAuthInterface
     public function updateEvent(string $credentials, string $calID, string $eventID, EventCalDAV $event): EventCalDAV
     {
         /** @var OutlookUser */
-        $user = $this->parseCredentials($credentials);
+        $user = OutlookUser::parseCredentials($credentials);
 
         $response = (new Http($this->srvUrl))
             ->http()
@@ -474,23 +474,10 @@ class Outlook extends Factory implements OAuthInterface
 
     private static function toPlateformTime(string $date): string
     {
-        // $dateTime = new \DateTime($date);
-        // $dateTime->setTimestamp($timestamp);
-
         return (new \DateTime($date))->format('Y-m-d\TH:i:sP');
     }
 
-    protected static function parseCredentials(string $credentials): PlateformUserInterface
-    {
-        $tmp = explode(';', $credentials);
-
-        return (new OutlookUser())
-            ->setToken($tmp[0])
-            ->setUsername($tmp[1])
-            ->setEmail($tmp[2]);
-    }
-
-    public function setCalenedar(string $calID): self
+    public function setCalendar(string $calID): self
     {
         $this->calendarID = $calID;
         return $this;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Ginov\CaldavPlugs\Plateforms\Credentials;
+namespace Ginov\CaldavPlugs\Plateforms\Google;
 
 use Ginov\CaldavPlugs\PlateformUserInterface;
 use JsonSerializable;
@@ -30,8 +30,17 @@ class GoogleUser implements PlateformUserInterface, JsonSerializable
 
     public function jsonSerialize(): mixed
     {
-        return [
+        return[
             'token' => $this->token
         ];
     }
+    
+    public  static function parseCredentials(string $credentials): PlateformUserInterface
+    {
+        $tmp = explode(';', $credentials);
+
+        return (new GoogleUser())
+            ->setToken($tmp[1]);
+    }
+
 }
